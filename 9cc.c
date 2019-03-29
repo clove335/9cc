@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "9cc.h"
 
 /* トークンの型を表す値 */
 enum {
@@ -12,6 +13,7 @@ enum {
 enum {
   ND_NUM = 256,   /* Type of int Node  */
 };
+
 
 typedef struct Node {
   int ty;             /* Operator or ND_NUM */
@@ -65,6 +67,47 @@ void tokenize(char *p) {
   
   tokens[i].ty = TK_EOF;
   tokens[i].input = p;
+}
+
+Vector *new_vector() {
+  Vector *vec = malloc(sizeof(Vector));
+  vec->data = malloc(sizeof(void *) * 16);
+  vec->capacity = 16;
+  vec->len = 0;
+  return vec;
+}
+
+void vec_push(Vector *vec, void *elem) {
+  if (vec->capacity == vec->len) {
+    vec->capacity *= 2;
+    vec->data = realloc(vec->data, sizeof(void *) * vec->capacity);
+  }
+  vec->data[vec->len++] = elem;
+}
+
+int expect(int line, int expected, int actual) {
+  if (expected == actual) {
+    return 0;
+  }
+  fprintf(stderr, "%d: %d expected, but got %d \n",
+      line, expected, actual);
+  exit(1);
+}
+
+void runtest() {
+  Vector *vec = new_vector();
+  expect(__LINE__, 0, vec->len);
+
+  for (int i = 0; i < 100; i++) {
+    vec_push(vec, (void *)(long)i);
+  }
+
+  expect(__LINE__, 100, vec->len);
+  expect(__LINE__, 0, (long)vec->data[0]);
+  expect(__LINE__, 50, (long)vec->data[50]);
+  expect(__LINE__, 99, (long)vec->data[99]);
+
+  printf("OK\n");
 }
 
 Node *new_node(int ty, Node *lhs, Node *rhs) {
@@ -172,6 +215,10 @@ int main(int argc, char **argv) {
     fprintf(stderr, "引数の個数が正しくありません\n");
     return 1;
   }
+  if ( strcmp(argv[1], "-test") == 0 ) {
+    runtest();
+    return 0;
+  } 
   /* Tokenize and parse. */
   tokenize(argv[1]);
   
