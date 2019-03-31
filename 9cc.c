@@ -7,26 +7,28 @@
 /* トークンの型を表す値 */
 enum {
   TK_NUM = 256,
+  TK_IDENT,
   TK_EOF,
 };
 
 enum {
   ND_NUM = 256,   /* Type of int Node  */
+  ND_IDENT,
 };
-
 
 typedef struct Node {
   int ty;             /* Operator or ND_NUM */
   struct Node *lhs;   /* Left-hand side */
   struct Node *rhs;   /* Right-hand side */
   int val;            /* Use only when ty is ND_NUM */
+  char name;          /* Use only when ty is ND_IDENT */
 } Node;
 
 typedef struct {
   int ty;       //Type of Token
   int val;      //tyがTKNUMの場合、その数値
   char *input;  //STRING of Token
-} Token;
+} Token;  
 
 Token tokens[100];
 
