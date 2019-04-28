@@ -4,8 +4,10 @@
 #include <string.h>
 #include "9cc.h"
 
+
 Token tokens[100];
 static int pos = 0;
+Token tokens[100];
 
 void error(int i, char *s) {
   fprintf(stderr, "ERROR: expected %s, but got %s\n",
@@ -13,7 +15,7 @@ void error(int i, char *s) {
   exit(1);
 }
 
-void tokenize(char *p) {
+void *tokenize(char *p) {
   int i = 0;
   while (*p) {
     // skip the spaces.
@@ -22,8 +24,8 @@ void tokenize(char *p) {
       continue;
     }
 
-    if (*p == '+' || *p == '-' || *p == '*' || *p == '/' ||
-        *p == '(' || *p == ')' || *p == '=' || *p == ';') {
+    if (*p == '+' || *p == '-' || *p == '*' || *p == '/' 
+        || *p == '(' || *p == ')' || *p == '=' || *p == ';') {
       tokens[i].ty = *p;
       tokens[i].input = p;
       i++;
@@ -64,22 +66,6 @@ void tokenize(char *p) {
   tokens[i].input = p;
 }
 
-Vector *new_vector() {
-  Vector *vec = malloc(sizeof(Vector));
-  vec->data = malloc(sizeof(void *) * 16);
-  vec->capacity = 16;
-  vec->len = 0;
-  return vec;
-}
-
-void vec_push(Vector *vec, void *elem) {
-  if (vec->capacity == vec->len) {
-    vec->capacity *= 2;
-    vec->data = realloc(vec->data, sizeof(void *) * vec->capacity);
-  }
-  vec->data[vec->len++] = elem;
-}
-
 int expect(int line, int expected, int actual) {
   if (expected == actual) {
     return 0;
@@ -90,6 +76,11 @@ int expect(int line, int expected, int actual) {
 }
 
 void runtest() {
+  test_vector();
+  test_map();
+}
+
+void test_vector() {
   Vector *vec = new_vector();
   expect(__LINE__, 0, vec->len);
 
@@ -103,6 +94,20 @@ void runtest() {
   expect(__LINE__, 99, (long)vec->data[99]);
 
   printf("OK\n");
+}
+
+void test_map() {
+  Map *map = new_map();
+  expect(__LINE__, 0, (int)map_get(map, "foo"));
+
+  map_put(map, "foo", (void *)2);
+  expect(__LINE__, 2, (int)map_get(map, "foo"));
+  
+  map_put(map, "bar", (void *)4);
+  expect(__LINE__, 4, (int)map_get(map, "bar"));
+
+  map_put(map, "foo", (void *)6);
+  expect(__LINE__, 6, (int)map_get(map, "foo"));
 }
 
 Node *new_node(int ty, Node *lhs, Node *rhs) {
@@ -247,6 +252,7 @@ Node *term() {
     return node;
   }
   
+/*<<<<<<< HEAD:9cc.c*/
   if (tokens[pos].ty == TK_IDENT) {
     return new_node_ident(tokens[pos++].name);
   }
@@ -289,19 +295,56 @@ Node *add() {
   }
 }
 
+Vector *new_vector() {
+  Vector *vec = malloc(sizeof(Vector));
+  vec->data = malloc(sizeof(void *) * 16);
+  vec->capacity = 16;
+  vec->len = 0;
+  return vec;
+}
+
+void vec_push(Vector *vec, void *elem) {
+  if (vec->capacity == vec->len) {
+    vec->capacity *= 2;
+    vec->data = realloc(vec->data, sizeof(void *) * vec->capacity);
+  }
+  vec->data[vec->len++] = elem;
+}
+
+Map *new_map() {
+  Map *map = malloc(sizeof(Map));
+  map->keys = new_vector();
+  map->vals = new_vector();
+  return map;
+}
+
+void map_put(Map *map, char *key, int *val) {
+  vec_push(map->keys, key);
+  vec_push(map->vals, val);
+}
+
+void *map_get(Map *map, char *key) {
+  for (int i = map->keys->len - 1; i >= 0; i--) {
+    if (strcmp(map->keys->data[i], key) == 0) {
+      return map->vals->data[i];
+    }
+  }
+  return NULL;
+}
 
 int main(int argc, char **argv) {
   if (argc != 2) {
     fprintf(stderr, "引数の個数が正しくありません\n");
     return 1;
   }
-  if ( strcmp(argv[1], "-test") == 0 ) {
+  if (strcmp(argv[1], "-test") == 0) {
     runtest();
     return 0;
   } 
   /* Tokenize and parse. */
   tokenize(argv[1]);
   program();
+/*<<<<<<< HEAD:9cc.c*/
 
   printf(".intel_syntax noprefix\n"); /* Output the first half of Assembly. */
   printf(".global main\n");           /*                                    */
