@@ -15,13 +15,24 @@ try() {
   fi
 }
 
-try 0 0
-try 42 42
-try 21 '5+20-4'
-try 41 " 12 + 34 - 5 " 
-try 47 "5+6*7"
-try  5 "15/3"
-try 77 "(5+6)*7"
-try  3 "15/(3+2)"
-
+try 0 '0;'
+try 42 '42;'
+try 21 '5+20-4;'
+try 41 " 12 + 34 - 5 ;" 
+try 47 "5+6*7;"
+try  5 "15/3;"
+try 77 "(5+6)*7;"
+try  3 "15/(3+2);"
+try 3 "a = 3;"
+try 22 "b = 5 * 6 - 8;"
+try 12 "a=z=3*2;a+z;"
+try  6 "a = 3; a = a+3;"
+try 12 "6*4-3*4;"
+try  6 "c = 2; c*3;"
+try  5 "return 5;"
+try  8 "c=5; b=3; c+b;"
+try  2 "c = 2;
+        b = 1;
+        return c;"
+try 14 "a = 3; b = 5 * 6 - 8; return a + b / 2;"
 echo OK

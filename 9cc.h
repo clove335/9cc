@@ -2,12 +2,14 @@
 enum {
   TK_NUM = 256,
   TK_IDENT,
-  TK_EOF,
+  TK_RETURN,
+  TK_EOF
 };
 
 enum {
   ND_NUM = 256,   /* Type of int Node  */
   ND_IDENT,
+  ND_RETURN
 };
 
 typedef struct Node {
@@ -21,6 +23,7 @@ typedef struct Node {
 typedef struct {
   int ty;       //Type of Token
   int val;      //tyがTKNUMの場合、その数値
+  char name;   // if TK_IDENT -> name.
   char *input;  //STRING of Token
 } Token;  
 
@@ -38,9 +41,13 @@ int expect(int line, int expected, int actual);
 void runtest(); 
 Node *new_node(int ty, Node *lhs, Node *rhs);
 Node *new_node_num(int val);
-int consume(int ty, int *pos);
+Node *new_node_ident(char name);
+int consume(int ty);
 void gen(Node *node);
-Node *add(int *pos);
-Node *term(int *pos);
-Node *mul(int *pos);
-Node *add(int *pos);
+void gen_lval(Node *node);
+Node *add();
+Node *term();
+Node *mul();
+Node *assign();
+Node *stmt();
+void program();

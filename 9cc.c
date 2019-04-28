@@ -5,6 +5,7 @@
 #include "9cc.h"
 
 Token tokens[100];
+static int pos = 0;
 
 void error(int i, char *s) {
   fprintf(stderr, "ERROR: expected %s, but got %s\n",
@@ -30,6 +31,23 @@ void tokenize(char *p) {
       continue;
     }
 
+    if (strncmp(p, "return", 6) == 0 && !isalnum(p[6])) {
+      tokens[i].ty = TK_RETURN;
+      tokens[i].input = p;
+      i++;
+      p += 6;
+      continue;
+    }
+
+    if ('a' <= *p && *p <= 'z') {
+      tokens[i].ty = TK_IDENT;
+      tokens[i].input = p;
+      tokens[i].name = *p;
+      i++;
+      p++;
+      continue;
+    }
+
     if (isdigit(*p)) {
       tokens[i].ty = TK_NUM;
       tokens[i].input = p;
@@ -38,14 +56,6 @@ void tokenize(char *p) {
       continue;
     }
     
-    if ('a' <= *p && *p <= 'z') {
-      tokens[i].ty = TK_IDENT;
-      tokens[i].input = p;
-      i++;
-      p++;
-      continue;
-    }
-
     fprintf(stderr, "tokenize: error unexpected input. \n");
     exit(1);
   }
@@ -103,6 +113,13 @@ Node *new_node(int ty, Node *lhs, Node *rhs) {
   return node;
 }
 
+Node *new_node_ident(char name) {
+  Node *node = malloc(sizeof(Node));
+  node->ty = ND_IDENT;
+  node->name = name;
+  return node;
+}
+
 Node *new_node_num(int val) {
   Node *node = malloc(sizeof(Node));
   node->ty = ND_NUM;
@@ -110,44 +127,91 @@ Node *new_node_num(int val) {
   return node;
 }
 
-Node *code[100];
+Node *code[1000];
 
-Node *assign(int *pos) {
-  Node *node = add(pos);
-  if (consume('=', pos)) {
-    return new_node('=', node, assign(pos));
+Node *assign() {
+  Node *node = add();
+  while (consume('=')) {
+    return new_node('=', node, assign());
   }
   return node;
 }
 
-Node *stmt(int *pos) {
-  Node *node = assign(pos);
-  if (!consume(';', pos)) {
-    error(*pos, ";");
+Node *stmt() {
+  Node *node;
+
+  if (consume(TK_RETURN)) {
+    node = malloc(sizeof(Node));
+    node->ty = ND_RETURN;
+    node->lhs = assign();
+  } else {
+    node = assign();
   }
+  
+  if (!consume(';')) {
+    error(pos,";");
+  }
+
   return node;
 }
 
 void program() {
   int i = 0;
 
-  int pos = 0;
   while (tokens[pos].ty != TK_EOF) {
-    code[i++] = stmt(&pos);
+    code[i++] = stmt();
   }
+  code[i] = NULL;
 }
 
-int consume(int ty, int *pos) {
-  if (tokens[*pos].ty != ty) {
+int consume(int ty) {
+  if (tokens[pos].ty != ty) {
     return 0;
   }
-  (*pos)++;
+  pos++;
   return 1;
+}
+void gen_lval(Node *node) {
+  if (node->ty != ND_IDENT)
+    error(pos, "代入の左辺値が変数ではありません");
+
+  int offset = 0;
+  offset = ('z' - node->name + 1) * 8;
+  printf("  mov rax, rbp\n");
+  printf("  sub rax, %d\n", offset);
+  printf("  push rax\n");
 }
 
 void gen(Node *node) {
+  if (node->ty == ND_RETURN) {
+    gen(node->lhs);
+    printf("  pop rax\n");
+    printf("  mov rsp, rbp\n");
+    printf("  pop rbp\n");
+    printf("  ret\n");
+    return;
+  }
+  
   if (node->ty == ND_NUM) {
     printf("  push %d\n", node->val);
+    return;
+  }
+  
+  if (node->ty == ND_IDENT) {
+    gen_lval(node);
+    printf("  pop rax\n");
+    printf("  mov rax, [rax]\n");
+    printf("  push rax\n");
+    return;
+  }
+
+  if (node->ty == '=') {
+    gen_lval(node->lhs);
+    gen(node->rhs); 
+    printf("  pop rdi\n");
+    printf("  pop rax\n");
+    printf("  mov [rax], rdi\n");
+    printf("  push rdi\n");
     return;
   }
   
@@ -174,29 +238,34 @@ void gen(Node *node) {
   printf("  push rax\n");
 }
 
-Node *term(int *pos) {
-  if (consume('(', pos)) {
-    Node *node = add(pos);
-    if (!consume(')', pos)) {
-      error(*pos, "開きカッコ '(' に対応する閉じカッコ ')' がありません");
+Node *term() {
+  if (consume('(')) {
+    Node *node = assign();
+    if (!consume(')')) {
+      error(pos, "開きカッコ '(' に対応する閉じカッコ ')' がありません");
     }
     return node;
   }
-
-  if (tokens[*pos].ty == TK_NUM) {
-    return new_node_num(tokens[(*pos)++].val);
+  
+  if (tokens[pos].ty == TK_IDENT) {
+    return new_node_ident(tokens[pos++].name);
   }
+
+  if (tokens[pos].ty == TK_NUM) {
+    return new_node_num(tokens[pos++].val);
+  }
+
 }
 
-Node *mul(int *pos) {
-  Node *node = term(pos);
+Node *mul() {
+  Node *node = term();
 
   for (;;) {
-    if (consume('*', pos)) {
-      node = new_node('*', node, term(pos));
+    if (consume('*')) {
+      node = new_node('*', node, term());
     }
-    else if (consume('/', pos)) {
-      node = new_node('/', node, term(pos));
+    else if (consume('/')) {
+      node = new_node('/', node, term());
     }
     else {
       return node;
@@ -204,15 +273,15 @@ Node *mul(int *pos) {
   }
 }
 
-Node *add(int *pos) {
-  Node *node = mul(pos);
+Node *add() {
+  Node *node = mul();
 
   for (;;) {
-    if (consume('+', pos)) {
-      node = new_node('+', node, mul(pos));
+    if (consume('+')) {
+      node = new_node('+', node, mul());
     }
-    else if (consume('-', pos)) {
-      node = new_node('-', node, mul(pos));
+    else if (consume('-')) {
+      node = new_node('-', node, mul());
     }
     else {
       return node;
@@ -232,15 +301,22 @@ int main(int argc, char **argv) {
   } 
   /* Tokenize and parse. */
   tokenize(argv[1]);
-  
-  int pos = 0;
-  Node *node = add(&pos);
+  program();
+
   printf(".intel_syntax noprefix\n"); /* Output the first half of Assembly. */
   printf(".global main\n");           /*                                    */
   printf("main:\n");                  /*                                    */
-  
-  gen(node);
-  printf("  pop rax\n");  /* Load the value of all equatation to RAX */
+ 
+  printf("  push rbp\n");      /* prologue. 26 Sizes of variable. */
+  printf("  mov rbp, rsp\n");
+  printf("  sub rsp, 208\n");
+
+  for (int i = 0; code[i]; i++) {
+    gen(code[i]);
+    printf("  pop rax\n");  /* Load the value of all equatation to RAX */
+  }
+  printf("  mov rsp, rbp\n"); /* epilogue. */
+  printf("  pop rbp\n");  
   printf("  ret\n");      /* and return it.                          */
   return 0;
 }
