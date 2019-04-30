@@ -8,6 +8,7 @@
 Token tokens[100];
 static int pos = 0;
 Token tokens[100];
+Map *env;
 
 void error(int i, char *s) {
   fprintf(stderr, "ERROR: expected %s, but got %s\n",
@@ -42,11 +43,22 @@ void *tokenize(char *p) {
     }
 
     if ('a' <= *p && *p <= 'z') {
+      char save[256];
+      int count = 0;
+
       tokens[i].ty = TK_IDENT;
       tokens[i].input = p;
-      tokens[i].name = *p;
+      
+      do {
+        save[count++] = *p;
+        p++;
+      } while (islower(*p));
+      save[count] = '\0';
+
+      char *copy = malloc(sizeof(char)*count);
+      strcpy(copy, save);
+      tokens[i].name = copy;
       i++;
-      p++;
       continue;
     }
 
@@ -98,16 +110,16 @@ void test_vector() {
 
 void test_map() {
   Map *map = new_map();
-  expect(__LINE__, 0, (int)map_get(map, "foo"));
+  expect(__LINE__, 0, (long)map_get(map, "foo"));
 
   map_put(map, "foo", (void *)2);
-  expect(__LINE__, 2, (int)map_get(map, "foo"));
+  expect(__LINE__, 2, (long)map_get(map, "foo"));
   
   map_put(map, "bar", (void *)4);
-  expect(__LINE__, 4, (int)map_get(map, "bar"));
+  expect(__LINE__, 4, (long)map_get(map, "bar"));
 
   map_put(map, "foo", (void *)6);
-  expect(__LINE__, 6, (int)map_get(map, "foo"));
+  expect(__LINE__, 6, (long)map_get(map, "foo"));
 }
 
 Node *new_node(int ty, Node *lhs, Node *rhs) {
@@ -118,7 +130,7 @@ Node *new_node(int ty, Node *lhs, Node *rhs) {
   return node;
 }
 
-Node *new_node_ident(char name) {
+Node *new_node_ident(char *name) {
   Node *node = malloc(sizeof(Node));
   node->ty = ND_IDENT;
   node->name = name;
@@ -136,7 +148,8 @@ Node *code[1000];
 
 Node *assign() {
   Node *node = add();
-  while (consume('=')) {
+  if (consume('=')) {
+    map_put(env, node->name, (void *)(long) env->keys->len);
     return new_node('=', node, assign());
   }
   return node;
@@ -180,10 +193,9 @@ void gen_lval(Node *node) {
   if (node->ty != ND_IDENT)
     error(pos, "代入の左辺値が変数ではありません");
 
-  int offset = 0;
-  offset = ('z' - node->name + 1) * 8;
+  int count = (long)map_get(env, node->name);
   printf("  mov rax, rbp\n");
-  printf("  sub rax, %d\n", offset);
+  printf("  sub rax, %d\n", count*8);
   printf("  push rax\n");
 }
 
@@ -343,6 +355,7 @@ int main(int argc, char **argv) {
   } 
   /* Tokenize and parse. */
   tokenize(argv[1]);
+  env = new_map();
   program();
 /*<<<<<<< HEAD:9cc.c*/
 
@@ -352,7 +365,7 @@ int main(int argc, char **argv) {
  
   printf("  push rbp\n");      /* prologue. 26 Sizes of variable. */
   printf("  mov rbp, rsp\n");
-  printf("  sub rsp, 208\n");
+  printf("  sub rsp, %d\n", env->keys->len * 8);
 
   for (int i = 0; code[i]; i++) {
     gen(code[i]);

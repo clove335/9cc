@@ -17,13 +17,13 @@ typedef struct Node {
   struct Node *lhs;   /* Left-hand side */
   struct Node *rhs;   /* Right-hand side */
   int val;            /* Use only when ty is ND_NUM */
-  char name;          /* Use only when ty is ND_IDENT */
+  char *name;          /* Use only when ty is ND_IDENT */
 } Node;
 
 typedef struct {
   int ty;       //Type of Token
   int val;      //tyがTKNUMの場合、その数値
-  char name;   // if TK_IDENT -> name.
+  char *name;   // if TK_IDENT -> name.
   char *input;  //STRING of Token
 } Token;  
 
@@ -45,7 +45,7 @@ void runtest();
 Node *new_node(int ty, Node *lhs, Node *rhs);
 Node *new_node_num(int val);
 /*<<<<<<< HEAD*/
-Node *new_node_ident(char name);
+Node *new_node_ident(char *name);
 int consume(int ty);
 void gen(Node *node);
 void gen_lval(Node *node);
