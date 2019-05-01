@@ -47,5 +47,9 @@ try  2 "c = 2;
 try 14 "a = 3; b = 5 * 6 - 8; return a + b / 2;"
 try 68 "a = 12; x = (3+5)*7; b = a+x; return b;"
 try 45 "foo = 10; bar = 35; return foo + bar;"
+try  4 "return +4;"
+try  1 "return -(6+1)+8;"
+try  5 "n=-10+15; return n;"
+try  9 "num = -3*-3; return num;"
 
 echo OK

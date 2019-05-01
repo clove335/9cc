@@ -149,7 +149,7 @@ Node *code[1000];
 Node *assign() {
   Node *node = add();
   if (consume('=')) {
-    map_put(env, node->name, (void *)(long) env->keys->len);
+    map_put(env, node->name, (void *) (long) env->keys->len);
     return new_node('=', node, assign());
   }
   return node;
@@ -276,14 +276,14 @@ Node *term() {
 }
 
 Node *mul() {
-  Node *node = term();
+  Node *node = unary();
 
   for (;;) {
     if (consume('*')) {
-      node = new_node('*', node, term());
+      node = new_node('*', node, unary());
     }
     else if (consume('/')) {
-      node = new_node('/', node, term());
+      node = new_node('/', node, unary());
     }
     else {
       return node;
@@ -305,6 +305,16 @@ Node *add() {
       return node;
     }
   }
+}
+
+Node *unary() {
+  if (consume('+')) {
+    return term();
+  }
+  if (consume('-')) {
+    return new_node('-', new_node_num(0), term());
+  }
+  return term();
 }
 
 Vector *new_vector() {

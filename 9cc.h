@@ -52,6 +52,7 @@ void gen_lval(Node *node);
 Node *add();
 Node *term();
 Node *mul();
+Node *unary();
 Node *assign();
 Node *stmt();
 void program();
