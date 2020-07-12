@@ -1,11 +1,10 @@
 #include <ctype.h>
 #include <stdio.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 #include "9cc.h"
 
-
-Token tokens[100];
 static int pos = 0;
 Token tokens[100];
 Map *env;
@@ -24,30 +23,88 @@ void *tokenize(char *p) {
       p++;
       continue;
     }
+    
+    if (strncmp(p, "==", 2) == 0) {
+      tokens[i].ty = TK_EQ;
+      tokens[i].input = "==";
+      tokens[i].len = 2;
+      i++;
+      p += 2;
+      continue;
+    }  
+    
+    if (strncmp(p, "!=", 2) == 0) {
+      tokens[i].ty = TK_NOT_EQ;
+      tokens[i].input = p;
+      tokens[i].len = 2;
+      i++;
+      p += 2;
+      continue;
+    }
+    
+    if (strncmp(p, ">=", 2) == 0) {
+      tokens[i].ty = TK_L_EQ;
+      tokens[i].input = p;
+      tokens[i].len = 2;
+      i++;
+      p += 2;
+      continue;
+    }
+
+    if ((strncmp(p, "<=", 2) == 0) ){
+      tokens[i].ty = TK_L_EQ;
+      tokens[i].input = p;
+      tokens[i].len = 2;
+      i++;
+      p += 2;
+      continue;
+    }
+
+    if ((strncmp(p, "<", 1) == 0) ){
+      tokens[i].ty = TK_L_TH;
+      tokens[i].input = p;
+      tokens[i].len = 1;
+      i++;
+      p++;
+      continue;
+    }
+
+    if ((strncmp(p, ">", 1) == 0) ){
+      tokens[i].ty = TK_L_TH;
+      tokens[i].input = p;
+      tokens[i].len = 1;
+      i++;
+      p++;
+      continue;
+    }
 
     if (*p == '+' || *p == '-' || *p == '*' || *p == '/' 
         || *p == '(' || *p == ')' || *p == '=' || *p == ';') {
       tokens[i].ty = *p;
       tokens[i].input = p;
+      tokens[i].len = 1;
       i++;
       p++;
       continue;
     }
 
     if (strncmp(p, "return", 6) == 0 && !isalnum(p[6])) {
+      //tokens[i].ty = TK_RETURN;
       tokens[i].ty = TK_RETURN;
-      tokens[i].input = p;
+      tokens[i].input = "return";
+      tokens[i].len = 6;
       i++;
       p += 6;
       continue;
     }
-
+      
     if ('a' <= *p && *p <= 'z') {
       char save[256];
       int count = 0;
 
       tokens[i].ty = TK_IDENT;
       tokens[i].input = p;
+      tokens[i].len = 1;
       
       do {
         save[count++] = *p;
@@ -66,6 +123,7 @@ void *tokenize(char *p) {
       tokens[i].ty = TK_NUM;
       tokens[i].input = p;
       tokens[i].val = strtol(p, &p, 10);
+      tokens[i].len = 1;
       i++;
       continue;
     }
@@ -147,18 +205,23 @@ Node *new_node_num(int val) {
 Node *code[1000];
 
 Node *assign() {
-  Node *node = add();
-  if (consume('=')) {
+  Node *node = equality();
+  if (consume("=")) {
     map_put(env, node->name, (void *) (long) env->keys->len);
     return new_node('=', node, assign());
   }
   return node;
 }
 
+Node *expr() {
+  return assign();
+}
+
 Node *stmt() {
   Node *node;
 
-  if (consume(TK_RETURN)) {
+  //if (consume("return")) {
+  if (consume("return")) {
     node = malloc(sizeof(Node));
     node->ty = ND_RETURN;
     node->lhs = assign();
@@ -166,7 +229,7 @@ Node *stmt() {
     node = assign();
   }
   
-  if (!consume(';')) {
+  if (!consume(";")) {
     error(pos,";");
   }
 
@@ -182,12 +245,17 @@ void program() {
   code[i] = NULL;
 }
 
-int consume(int ty) {
-  if (tokens[pos].ty != ty) {
-    return 0;
+//int consume(int ty) {
+bool consume(char *op) {
+  //if (tokens[pos].ty != ty) {
+  if (tokens[pos].ty == TK_RETURN) { pos++; return true; }
+  //if (tokens[pos].input != *op ||
+  if (strlen(op) != tokens[pos].len ||
+      strncmp(tokens[pos].input, op, tokens[pos].len)) {
+    return false;
   }
   pos++;
-  return 1;
+  return true;
 }
 void gen_lval(Node *node) {
   if (node->ty != ND_IDENT)
@@ -213,7 +281,7 @@ void gen(Node *node) {
     printf("  push %d\n", node->val);
     return;
   }
-  
+
   if (node->ty == ND_IDENT) {
     gen_lval(node);
     printf("  pop rax\n");
@@ -251,14 +319,35 @@ void gen(Node *node) {
   case '/':
     printf("  mov rdx, 0\n");
     printf("  div rdi\n");
+    break;
+  case ND_EQ:
+    printf("  cmp rax, rdi\n");
+    printf("  sete al\n");
+    printf("  movzb rax, al\n");
+    break;
+  case ND_NOT_EQ:
+    printf("  cmp rax, rdi\n");
+    printf("  setne al\n");
+    printf("  movzb rax, al\n");
+    break;
+  case ND_L_EQ:
+    printf("  cmp rax, rdi\n");
+    printf("  setle al\n");
+    printf("  movzb rax, al\n");
+    break;
+  case ND_L_TH:
+    printf("  cmp rax, rdi\n");
+    printf("  setl al\n");
+    printf("  movzb rax, al\n");
+    break;
   }
   printf("  push rax\n");
 }
 
 Node *term() {
-  if (consume('(')) {
+  if (consume("(")) {
     Node *node = assign();
-    if (!consume(')')) {
+    if (!consume(")")) {
       error(pos, "開きカッコ '(' に対応する閉じカッコ ')' がありません");
     }
     return node;
@@ -279,10 +368,10 @@ Node *mul() {
   Node *node = unary();
 
   for (;;) {
-    if (consume('*')) {
+    if (consume("*")) {
       node = new_node('*', node, unary());
     }
-    else if (consume('/')) {
+    else if (consume("/")) {
       node = new_node('/', node, unary());
     }
     else {
@@ -295,10 +384,10 @@ Node *add() {
   Node *node = mul();
 
   for (;;) {
-    if (consume('+')) {
+    if (consume("+")) {
       node = new_node('+', node, mul());
     }
-    else if (consume('-')) {
+    else if (consume("-")) {
       node = new_node('-', node, mul());
     }
     else {
@@ -308,13 +397,53 @@ Node *add() {
 }
 
 Node *unary() {
-  if (consume('+')) {
+  if (consume("+")) {
     return term();
   }
-  if (consume('-')) {
+  if (consume("-")) {
     return new_node('-', new_node_num(0), term());
   }
   return term();
+}
+
+Node *rel() {
+  Node *node = add();
+
+  for (;;) {
+    //Token *t = tokens;
+    
+    if (consume("<=")) {
+      node = new_node(ND_L_EQ, node, add());
+    }
+    else if (consume(">=")) {
+      node = new_node(ND_L_EQ, add(), node);
+    }
+    else if (consume("<"))  {
+      node = new_node(ND_L_TH, node, add());
+    }
+    else if (consume(">"))  {
+      node = new_node(ND_L_TH, add(), node);
+    }
+    else {
+      return node;
+    }
+  }
+}
+
+Node *equality() {
+  Node *node = rel();
+  for (;;) {
+    //Token *t = tokens;
+    if (consume("==")) {
+      node = new_node(ND_EQ, node, rel());
+    }
+    else if (consume("!=")) {
+      node = new_node(ND_NOT_EQ, node, rel());
+    } 
+    else { 
+      return node;
+    }
+  }
 }
 
 Vector *new_vector() {

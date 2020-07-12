@@ -2,6 +2,10 @@
 enum {
   TK_NUM = 256,
   TK_IDENT,
+  TK_EQ,
+  TK_NOT_EQ,
+  TK_L_EQ,
+  TK_L_TH,
   TK_RETURN,
   TK_EOF
 };
@@ -9,6 +13,10 @@ enum {
 enum {
   ND_NUM = 256,   /* Type of int Node  */
   ND_IDENT,
+  ND_EQ,
+  ND_NOT_EQ,
+  ND_L_EQ,
+  ND_L_TH,
   ND_RETURN
 };
 
@@ -25,6 +33,7 @@ typedef struct {
   int val;      //tyがTKNUMの場合、その数値
   char *name;   // if TK_IDENT -> name.
   char *input;  //STRING of Token
+  int len;
 } Token;  
 
 typedef struct {
@@ -46,7 +55,7 @@ Node *new_node(int ty, Node *lhs, Node *rhs);
 Node *new_node_num(int val);
 /*<<<<<<< HEAD*/
 Node *new_node_ident(char *name);
-int consume(int ty);
+bool consume(char *op);
 void gen(Node *node);
 void gen_lval(Node *node);
 Node *add();
@@ -63,4 +72,7 @@ void test_map();
 Map *new_map();
 void map_put(Map *map, char *key, int *val);
 void *map_get(Map *map, char *key); 
+Node *equality();
+Node *expr();
+
 /*>>>>>>> fa0fd4fd1b67a8c00c5534b101c8609ca324be23*/
