@@ -1,3 +1,6 @@
+#include <stdbool.h>
+#include <stdio.h>
+
 /* トークンの型を表す値 */
 enum {
   TK_NUM = 256,
@@ -46,6 +49,9 @@ typedef struct {
   Vector *keys;
   Vector *vals;
 } Map;
+
+extern int pos;
+extern Token tokens[100];
 
 void error(int i, char *s);
 void *tokenize(char *p);
