@@ -78,5 +78,9 @@ assert  2 "if (2) return 2; return 5;"
 assert  15 "a = 15; if (a) return a; return 5;"
 assert  1 "x = 1; if (3*4 > 10) return x; return 0;"
 assert  0 "x = 1; if (3*4 < 10) return x; return 0;"
+assert  2 "x = 5; if (x == 5) x = 2; else x = 15; return x;"
+assert  15 "x = 5; if (x == 1) x = 2; else x = 15; return x;"
+assert  15 "x = 5; if (x == 1) x = 2; else if (x == 5) x = 15; return x;"
+assert  5 "x = 5; if (x == 1) x = 2; else if (x == 4) x = 15; else x; return x;"
 
 echo OK

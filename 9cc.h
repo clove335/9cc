@@ -11,6 +11,7 @@ enum {
   TK_L_TH,
   TK_RETURN,
   TK_IF,
+  TK_ELSE,
   TK_EOF
 };
 

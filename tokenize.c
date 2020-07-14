@@ -10,7 +10,6 @@ void error(int i, char *s) {
 }
 
 bool consume(char *op) {
-  //if (tokens[pos].input != *op ||
   if (strlen(op) != tokens[pos].len ||
       strncmp(tokens[pos].input, op, tokens[pos].len)) {
     return false;
@@ -83,12 +82,20 @@ void *tokenize(char *p) {
     }
 
     if (strncmp(p, "if", 2) == 0) {
-      //tokens[i].ty = TK_RETURN;
       tokens[i].ty = TK_IF;
       tokens[i].input = "if";
       tokens[i].len = 2;
       i++;
       p += 2;
+      continue;
+    }
+      
+    if (strncmp(p, "else", 4) == 0) {
+      tokens[i].ty = TK_ELSE;
+      tokens[i].input = "else";
+      tokens[i].len = 4;
+      i++;
+      p += 4;
       continue;
     }
       
