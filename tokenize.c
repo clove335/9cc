@@ -99,6 +99,15 @@ void *tokenize(char *p) {
       continue;
     }
       
+    if (strncmp(p, "while", 5) == 0) {
+      tokens[i].ty = TK_WHILE;
+      tokens[i].input = "while";
+      tokens[i].len = 5;
+      i++;
+      p += 5;
+      continue;
+    }
+      
     if (*p == '+' || *p == '-' || *p == '*' || *p == '/' 
         || *p == '(' || *p == ')' || *p == '=' || *p == ';') {
       tokens[i].ty = *p;
@@ -159,6 +168,7 @@ void *tokenize(char *p) {
 
 int expect(int line, int expected, int actual) {
   if (expected == actual) {
+    if (tokens[pos].ty == '(') pos++;
     return 0;
   }
   fprintf(stderr, "%d: %d expected, but got %d \n",

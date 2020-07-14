@@ -83,4 +83,9 @@ assert  15 "x = 5; if (x == 1) x = 2; else x = 15; return x;"
 assert  15 "x = 5; if (x == 1) x = 2; else if (x == 5) x = 15; return x;"
 assert  5 "x = 5; if (x == 1) x = 2; else if (x == 4) x = 15; else x; return x;"
 
+assert  7 "x = 0; while (x < 7) x = x + 1; return x;"
+assert  0 "x = 10; while (x > 0) x = x - 1; return x;"
+#assert  5 "x = 0; if (x == 1) x = 2; else if (x == 4) x = 15; else x; return x;"
+#assert  5 "x = 5; if (x == 1) x = 2; else if (x == 4) x = 15; else x; return x;"
+
 echo OK

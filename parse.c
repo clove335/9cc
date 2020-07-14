@@ -44,7 +44,6 @@ Node *expr() {
 Node *stmt() {
   Node *node;
 
-  //if (consume("return")) {
   if (consume("return")) {
     node = malloc(sizeof(Node));
     node->ty = ND_RETURN;
@@ -56,17 +55,28 @@ Node *stmt() {
   if (consume("if")) {
     node = malloc(sizeof(Node));
     node->ty = ND_IF;
-    if (consume("(")) {
-      node->cond = expr();
-      if (!consume(")")) {
-        error(pos, "開きカッコ '(' に対応する閉じカッコ ')' がありません");
-      }
+    expect(__LINE__, '(', tokens[pos].ty);
+    node->cond = expr();
+    if (!consume(")")) {
+      error(pos, "開きカッコ '(' に対応する閉じカッコ ')' がありません");
     }
     node->then = stmt();
     if (consume("else")) node->els = stmt();
     return node;
   }
   
+  if (consume("while")) {
+    node = malloc(sizeof(Node));
+    node->ty = ND_WHILE;
+    expect(__LINE__, '(', tokens[pos].ty);
+    node->cond = expr();
+    if (!consume(")")) {
+      error(pos, "開きカッコ '(' に対応する閉じカッコ ')' がありません");
+    }
+    node->then = stmt();
+    return node;
+  }
+
   if (!consume(";")) {
     error(pos,";");
   }
@@ -149,8 +159,6 @@ Node *rel() {
   Node *node = add();
 
   for (;;) {
-    //Token *t = tokens;
-    
     if (consume("<=")) {
       node = new_node(ND_L_EQ, node, add());
     }
@@ -172,7 +180,6 @@ Node *rel() {
 Node *equality() {
   Node *node = rel();
   for (;;) {
-    //Token *t = tokens;
     if (consume("==")) {
       node = new_node(ND_EQ, node, rel());
     }
