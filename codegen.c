@@ -1,5 +1,6 @@
 #include "9cc.h"
 
+static int labelnum = 1;
 Map *env;
 
 void gen_lval(Node *node) {
@@ -42,6 +43,29 @@ void gen(Node *node) {
     printf("  pop rax\n");
     printf("  mov [rax], rdi\n");
     printf("  push rdi\n");
+    return;
+  }
+
+  if (node->ty == ND_IF) {
+    int num = labelnum++;
+    if (node->els) {
+      gen(node->cond);
+      printf("  pop rax\n");
+      printf("  cmp rax, 0\n");
+      printf("  je  .L.else.%d\n", num);
+      gen(node->then);
+      printf("  jmp .L.end.%d\n", num);
+      printf(".L.else.%d:\n", num);
+      gen(node->els);
+      printf(".L.end.%d:\n", num);
+    } else {
+      gen(node->cond);
+      printf("  pop rax\n");
+      printf("  cmp rax, 0\n");
+      printf("  je  .L.end.%d\n", num);
+      gen(node->then);
+      printf(".L.end.%d:\n", num);
+    }
     return;
   }
   

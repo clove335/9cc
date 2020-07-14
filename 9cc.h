@@ -10,6 +10,7 @@ enum {
   TK_L_EQ,
   TK_L_TH,
   TK_RETURN,
+  TK_IF,
   TK_EOF
 };
 
@@ -20,13 +21,19 @@ enum {
   ND_NOT_EQ,
   ND_L_EQ,
   ND_L_TH,
-  ND_RETURN
+  ND_RETURN,
+  ND_IF
 };
 
 typedef struct Node {
   int ty;             /* Operator or ND_NUM */
   struct Node *lhs;   /* Left-hand side */
   struct Node *rhs;   /* Right-hand side */
+
+  struct Node *cond;         /* "if" statement */
+  struct Node *then;
+  struct Node *els;
+
   int val;            /* Use only when ty is ND_NUM */
   char *name;          /* Use only when ty is ND_IDENT */
 } Node;

@@ -52,6 +52,20 @@ Node *stmt() {
   } else {
     node = assign();
   }
+
+  if (consume("if")) {
+    node = malloc(sizeof(Node));
+    node->ty = ND_IF;
+    if (consume("(")) {
+      node->cond = expr();
+      if (!consume(")")) {
+        error(pos, "開きカッコ '(' に対応する閉じカッコ ')' がありません");
+      }
+    }
+    node->then = stmt();
+    if (consume("else")) node->els = stmt();
+    return node;
+  }
   
   if (!consume(";")) {
     error(pos,";");

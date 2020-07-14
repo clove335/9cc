@@ -39,6 +39,7 @@ assert  6 "a = 3; a = a+3;"
 assert 22 "b = 5 * 6 - 8;"
 assert 12 "6*4-3*4;"
 assert  6 "c = 2; c*3;"
+
 assert  5 "return 5;"
 assert  8 "c=5; b=3; c+b;"
 assert  2 "c = 2;
@@ -51,6 +52,7 @@ assert  4 "return +4;"
 assert  1 "return -(6+1)+8;"
 assert  5 "n=-10+15; return n;"
 assert  9 "num = -3*-3; return num;"
+
 assert  0 "4==5;"
 assert  1 "5==5;"
 assert  0 "5 != 5;"
@@ -69,5 +71,12 @@ assert  1 "5 >= 5;"
 assert  1 "6 >= 5;"
 assert  0 "4 >= 5;"
 
+assert  5 "if (0) return 2; return 5;"
+assert  5 "if (1-1) return 2; return 5;"
+assert  2 "if (1) return 2; return 5;"
+assert  2 "if (2) return 2; return 5;"
+assert  15 "a = 15; if (a) return a; return 5;"
+assert  1 "x = 1; if (3*4 > 10) return x; return 0;"
+assert  0 "x = 1; if (3*4 < 10) return x; return 0;"
 
 echo OK
