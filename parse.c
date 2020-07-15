@@ -41,13 +41,21 @@ Node *expr() {
   return assign();
 }
 
+Node *read_expr_stmt(void) {
+  Node *node;
+  node = malloc(sizeof(Node));
+  node->ty = ND_EXPR_STMT;
+  node->lhs = expr();
+  return node;
+}
+
 Node *stmt() {
   Node *node;
 
   if (consume("return")) {
     node = malloc(sizeof(Node));
     node->ty = ND_RETURN;
-    node->lhs = assign();
+    node->lhs = expr();
   } else {
     node = assign();
   }
@@ -61,7 +69,8 @@ Node *stmt() {
       error(pos, "開きカッコ '(' に対応する閉じカッコ ')' がありません");
     }
     node->then = stmt();
-    if (consume("else")) node->els = stmt();
+    if (consume("else"))
+      node->els = stmt();
     return node;
   }
   
@@ -77,10 +86,30 @@ Node *stmt() {
     return node;
   }
 
+  if (consume("for")) {
+    node = malloc(sizeof(Node));
+    node->ty = ND_FOR;
+    expect(__LINE__, '(', tokens[pos].ty);
+    if (!consume(";")) {
+      node->init = read_expr_stmt();
+      expect(__LINE__, ';', tokens[pos].ty);
+    }
+    if (!consume(";")) {
+      node->cond = expr();
+      expect(__LINE__, ';', tokens[pos].ty);
+    }
+    if (!consume(")")) {
+      node->after = read_expr_stmt();
+      expect(__LINE__, ')', tokens[pos].ty);
+    }
+    node->then = stmt();
+    return node;
+  }
+
+  //node = read_expr_stmt();
   if (!consume(";")) {
     error(pos,";");
   }
-
   return node;
 }
 

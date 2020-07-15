@@ -108,6 +108,15 @@ void *tokenize(char *p) {
       continue;
     }
       
+    if (strncmp(p, "for", 3) == 0) {
+      tokens[i].ty = TK_FOR;
+      tokens[i].input = "for";
+      tokens[i].len = 3;
+      i++;
+      p += 3;
+      continue;
+    }
+      
     if (*p == '+' || *p == '-' || *p == '*' || *p == '/' 
         || *p == '(' || *p == ')' || *p == '=' || *p == ';') {
       tokens[i].ty = *p;
@@ -168,7 +177,9 @@ void *tokenize(char *p) {
 
 int expect(int line, int expected, int actual) {
   if (expected == actual) {
-    if (tokens[pos].ty == '(') pos++;
+    if (tokens[pos].ty == '(' ||
+        tokens[pos].ty == ';' ||
+        tokens[pos].ty == ')') pos++;
     return 0;
   }
   fprintf(stderr, "%d: %d expected, but got %d \n",

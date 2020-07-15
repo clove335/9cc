@@ -14,17 +14,14 @@ void gen_lval(Node *node) {
 }
 
 void gen(Node *node) {
-  if (node->ty == ND_RETURN) {
-    gen(node->lhs);
-    printf("  pop rax\n");
-    printf("  mov rsp, rbp\n");
-    printf("  pop rbp\n");
-    printf("  ret\n");
-    return;
-  }
-  
   if (node->ty == ND_NUM) {
     printf("  push %d\n", node->val);
+    return;
+  }
+
+  if (node->ty == ND_EXPR_STMT) {
+    gen(node->lhs);
+    printf("  add rsp, 8\n");
     return;
   }
 
@@ -82,6 +79,34 @@ void gen(Node *node) {
     return;
   }
 
+  if (node->ty == ND_FOR) {
+    int num = labelnum++;
+    if (node->init) 
+      gen(node->init);
+    printf(".L.begin.%d:\n", num);
+    if (node->cond) {
+      gen(node->cond);
+      printf("  pop rax\n");
+      printf("  cmp rax, 0\n");
+      printf("  je  .L.end.%d\n", num);
+    }
+    gen(node->then);
+    if (node->after)
+      gen(node->after);
+    printf("  jmp .L.begin.%d\n", num);
+    printf(".L.end.%d:\n", num);
+    return;
+  }
+
+  if (node->ty == ND_RETURN) {
+    gen(node->lhs);
+    printf("  pop rax\n");
+    printf("  mov rsp, rbp\n");
+    printf("  pop rbp\n");
+    printf("  ret\n");
+    return;
+  }
+  
   gen(node->lhs);
   gen(node->rhs);
 
