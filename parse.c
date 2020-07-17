@@ -106,7 +106,17 @@ Node *stmt() {
     return node;
   }
 
-  //node = read_expr_stmt();
+  if (consume("{")) {
+    Node *node = malloc(sizeof(Node));
+    node->ty = ND_BLOCK;
+    node->statements = new_vector();
+    while (!consume("}")) {
+      Node *stmt_in_block = stmt();
+      vec_push(node->statements, (void *)stmt_in_block);
+    }
+    return node;
+  }
+
   if (!consume(";")) {
     error(pos,";");
   }

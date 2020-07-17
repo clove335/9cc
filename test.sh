@@ -89,4 +89,11 @@ assert  10 "x = 0; i = 0; for (; i<10; i=i+1) x = x + 1; return x;"
 assert  55 "x = 0; i = 0; for (; i<=10; i=i+1) x = x + i; return x;"
 assert  10 "x = 0; for (;;) return 10; return x;"
 
+assert  3 "{1; {2;} return 3;}"
+assert  10 "x = 0; i = 0; while (x < 10) { x = x + 1; i = x; } return x;"
+assert  5 "x = 1; if (x == 1) { x = x * 5; } else { x = 2; } return x;"
+assert  2 "x = 0; if (x == 1) { x = x * 5; } else { x = 2; } return x;"
+assert  1 "x = 2; if (x == 1) { x = x * 5; } else if (x == 2) { x = x/2; } else { x = 7; } return x;"
+assert  7 "x = 3; if (x == 1) { x = x * 5; } else if (x == 2) { x = x/2; } else { x = 7; } return x;"
+
 echo OK

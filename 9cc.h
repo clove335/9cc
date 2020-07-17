@@ -1,5 +1,6 @@
-#include <stdbool.h>
 #include <stdio.h>
+#include <stdbool.h>
+#include <stdlib.h>
 
 /* トークンの型を表す値 */
 enum {
@@ -28,8 +29,20 @@ enum {
   ND_EXPR_STMT,
   ND_IF,
   ND_WHILE,
-  ND_FOR
+  ND_FOR,
+  ND_BLOCK
 };
+
+typedef struct {
+  void **data;
+  int capacity;
+  int len;
+} Vector;
+
+typedef struct {
+  Vector *keys;
+  Vector *vals;
+} Map;
 
 typedef struct Node {
   int ty;             /* Operator or ND_NUM */
@@ -41,6 +54,8 @@ typedef struct Node {
   struct Node *els;
   struct Node *init;
   struct Node *after;
+
+  Vector *statements; /* Block */
 
   int val;            /* Use only when ty is ND_NUM */
   char *name;         /* Use only when ty is ND_IDENT */
@@ -54,19 +69,16 @@ typedef struct {
   int len;
 } Token;  
 
-typedef struct {
-  void **data;
-  int capacity;
-  int len;
-} Vector;
-
-typedef struct {
-  Vector *keys;
-  Vector *vals;
-} Map;
-
 extern int pos;
 extern Token tokens[100];
+
+extern Vector *new_vector();
+extern void vec_push(Vector *vec, void *elem);
+extern void test_vector();
+extern void test_map();
+extern Map *new_map();
+extern void map_put(Map *map, char *key, int *val);
+extern void *map_get(Map *map, char *key); 
 
 void error(int i, char *s);
 void *tokenize(char *p);
@@ -86,13 +98,6 @@ Node *unary();
 Node *assign();
 Node *stmt();
 void program();
-Vector *new_vector();
-void vec_push(Vector *vec, void *elem);
-void test_vector();
-void test_map();
-Map *new_map();
-void map_put(Map *map, char *key, int *val);
-void *map_get(Map *map, char *key); 
 Node *equality();
 Node *expr();
 

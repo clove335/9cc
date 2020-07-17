@@ -1,6 +1,8 @@
+#include <stdio.h>
 #include <ctype.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include "9cc.h"
 
 void error(int i, char *s) {
@@ -118,7 +120,8 @@ void *tokenize(char *p) {
     }
       
     if (*p == '+' || *p == '-' || *p == '*' || *p == '/' 
-        || *p == '(' || *p == ')' || *p == '=' || *p == ';') {
+        || *p == '(' || *p == ')' || *p == '=' || *p == ';'
+        || *p == '{' || *p == '}') {
       tokens[i].ty = *p;
       tokens[i].input = p;
       tokens[i].len = 1;

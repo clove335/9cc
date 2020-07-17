@@ -1,3 +1,5 @@
+#include <stdio.h>
+#include <stdbool.h>
 #include "9cc.h"
 
 static int labelnum = 1;
@@ -95,6 +97,13 @@ void gen(Node *node) {
       gen(node->after);
     printf("  jmp .L.begin.%d\n", num);
     printf(".L.end.%d:\n", num);
+    return;
+  }
+
+  if (node->ty == ND_BLOCK) {
+    for (int i = 0; i < node->statements->len; i++) {
+      gen((Node *) node->statements->data[i]);
+    }
     return;
   }
 
