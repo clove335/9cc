@@ -3,7 +3,6 @@
 #include "9cc.h"
 
 static int labelnum = 1;
-Map *env;
 
 void gen_lval(Node *node) {
   if (node->ty != ND_IDENT)
@@ -107,12 +106,16 @@ void gen(Node *node) {
     return;
   }
 
+  if (node->ty == ND_FUNC_CALL) {
+    printf("  call %s\n", node->funcname);
+    printf("  push rax\n");
+    return;
+  }
+
   if (node->ty == ND_RETURN) {
     gen(node->lhs);
     printf("  pop rax\n");
-    printf("  mov rsp, rbp\n");
-    printf("  pop rbp\n");
-    printf("  ret\n");
+    printf("  jmp .L.return\n");
     return;
   }
   

@@ -131,7 +131,6 @@ void *tokenize(char *p) {
     }
 
     if (strncmp(p, "return", 6) == 0 && !isalnum(p[6])) {
-      //tokens[i].ty = TK_RETURN;
       tokens[i].ty = TK_RETURN;
       tokens[i].input = "return";
       tokens[i].len = 6;
@@ -145,18 +144,18 @@ void *tokenize(char *p) {
       int count = 0;
 
       tokens[i].ty = TK_IDENT;
-      tokens[i].input = p;
-      tokens[i].len = 1;
       
       do {
         save[count++] = *p;
         p++;
-      } while (islower(*p));
+      } while (isalnum(*p));
       save[count] = '\0';
 
       char *copy = malloc(sizeof(char)*count);
       strcpy(copy, save);
       tokens[i].name = copy;
+      tokens[i].input = copy;
+      tokens[i].len = sizeof(copy);
       i++;
       continue;
     }

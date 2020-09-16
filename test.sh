@@ -1,3 +1,9 @@
+#!/bin/bash
+cat <<EOF | gcc -xc -c -o tmp2.o -
+ ret() { return 3; }
+ ret5() { return 5; }
+EOF
+
 assert() {
   expected="$1"
   input="$2"
@@ -7,14 +13,14 @@ assert() {
     echo "9cc error : $input"
     exit 1
   fi
-  gcc -o tmp tmp.s
+  gcc -static -o tmp tmp.s tmp2.o
+  ./tmp
+  actual="$?"
   if [ "$?" != 0 ]; then
     echo "compile error : $input"
     nl -w2 tmp.s
     exit 1
   fi
-  ./tmp
-  actual="$?"
   
   if [ "$actual" = "$expected" ]; then
     echo "$input => $actual"
@@ -24,7 +30,69 @@ assert() {
   fi
 }
 
+test_function_call() {
+  exp=$1
+  stub=$2
+  output=$3
+  
+  #echo "$exp" | ./9cc > out.s
+  ./9cc "$exp" > out.s
+  if [ $? -ne 0 ]; then
+    echo failed to generate assembly from "$exp"
+    rm out.s
+    exit 1
+  fi
 
+  gcc -c out.s -o out.o
+  if [ $? -ne 0 ]; then
+    echo failed to generate .o file from "$exp"
+    cat out.s
+    rm out.s
+    exit 1
+  fi
+
+  gcc -c "$stub" -o stub.o
+  if [ $? -ne 0 ]; then
+    echo failed to compile "$stub"
+    rm out.s out.o
+    exit 1
+  fi
+
+  gcc out.o stub.o -o out
+  if [ $? -ne 0 ]; then
+    echo failed to link test stub and obj file generated from "$stub"
+    cat out.s
+    rm out.s out.o stub.o
+    exit 1
+  fi
+
+  ./out > stdout.txt
+  ret=$?
+
+  if [ $ret -ne 0 ]; then
+    cat out.s
+    rm out.s out.o stub.o out stdout.txt
+    exit 1
+  fi
+
+  echo "$output" | diff - stdout.txt > /dev/null 
+  #echo output
+  #echo "$output"
+  #echo stdout
+  #cat stdout.txt
+  #echo dev/null
+  #cat /dev/null
+  if [ $? -ne 0 ]; then
+    echo expect stdout to be \""$output"\", but got \""$(cat stdout.txt)"\".
+    cat out.s
+    rm out.s out.o stub.o out stdout.txt
+    exit 1
+  else
+    echo "$exp => $output"
+  fi
+
+  rm out.s out.o stub.o out stdout.txt
+}
 
 assert  0 "0;"
 assert 42 "42;"
@@ -95,5 +163,11 @@ assert  5 "x = 1; if (x == 1) { x = x * 5; } else { x = 2; } return x;"
 assert  2 "x = 0; if (x == 1) { x = x * 5; } else { x = 2; } return x;"
 assert  1 "x = 2; if (x == 1) { x = x * 5; } else if (x == 2) { x = x/2; } else { x = 7; } return x;"
 assert  7 "x = 3; if (x == 1) { x = x * 5; } else if (x == 2) { x = x/2; } else { x = 7; } return x;"
+
+assert  3 "x = ret(); return x;"
+assert  5 "x = ret5(); return x;"
+assert  5 "return ret5();"
+test_function_call "foo();"  "func.c" "OK"
+test_function_call "test();" "tests/func_call.c" "a test for function call: OK."
 
 echo OK

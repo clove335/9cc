@@ -30,7 +30,8 @@ enum {
   ND_IF,
   ND_WHILE,
   ND_FOR,
-  ND_BLOCK
+  ND_BLOCK,
+  ND_FUNC_CALL
 };
 
 typedef struct {
@@ -56,6 +57,7 @@ typedef struct Node {
   struct Node *after;
 
   Vector *statements; /* Block */
+  char *funcname;     /* Function call */
 
   int val;            /* Use only when ty is ND_NUM */
   char *name;         /* Use only when ty is ND_IDENT */
@@ -71,6 +73,8 @@ typedef struct {
 
 extern int pos;
 extern Token tokens[100];
+extern Map *env;
+extern Node *code[1000];
 
 extern Vector *new_vector();
 extern void vec_push(Vector *vec, void *elem);

@@ -31,12 +31,14 @@ int main(int argc, char **argv) {
  
   printf("  push rbp\n");      /* prologue. 26 Sizes of variable. */
   printf("  mov rbp, rsp\n");
-  printf("  sub rsp, %d\n", env->keys->len * 8);
+  printf("  sub rsp, %d\n", env->keys->len * 16);
 
   for (int i = 0; code[i]; i++) {
     gen(code[i]);
     printf("  pop rax\n");  /* Load the value of all equatation to RAX */
   }
+
+  printf(".L.return:\n");
   printf("  mov rsp, rbp\n"); /* epilogue. */
   printf("  pop rbp\n");  
   printf("  ret\n");      /* and return it.                          */

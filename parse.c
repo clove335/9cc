@@ -2,8 +2,6 @@
 #include <stdlib.h>
 #include "9cc.h"
 
-Map *env;
-
 Node *new_node(int ty, Node *lhs, Node *rhs) {
   Node *node = malloc(sizeof(Node));
   node->ty = ty;
@@ -25,8 +23,6 @@ Node *new_node_num(int val) {
   node->val = val;
   return node;
 }
-
-Node *code[1000];
 
 Node *assign() {
   Node *node = equality();
@@ -132,9 +128,10 @@ void program() {
   code[i] = NULL;
 }
 
+// term = "(" expr ")" | ident func-args? | num
 Node *term() {
   if (consume("(")) {
-    Node *node = assign();
+    Node *node = expr();
     if (!consume(")")) {
       error(pos, "開きカッコ '(' に対応する閉じカッコ ')' がありません");
     }
@@ -143,6 +140,14 @@ Node *term() {
   
 /*<<<<<<< HEAD:9cc.c*/
   if (tokens[pos].ty == TK_IDENT) {
+    if (tokens[pos+1].ty == '(') {
+      pos += 2;
+      expect(__LINE__, ')', tokens[pos].ty);
+      Node *node = malloc(sizeof(Node));
+      node->ty = ND_FUNC_CALL;
+      node->funcname = strndup(tokens[pos-3].name, tokens[pos-3].len);
+      return node;
+    }
     return new_node_ident(tokens[pos++].name);
   }
 
