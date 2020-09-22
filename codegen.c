@@ -22,7 +22,7 @@ void gen(Node *node) {
 
   if (node->ty == ND_EXPR_STMT) {
     gen(node->lhs);
-    printf("  add rsp, 8\n");
+    printf("  add rsp, 16\n");
     return;
   }
 
@@ -107,6 +107,18 @@ void gen(Node *node) {
   }
 
   if (node->ty == ND_FUNC_CALL) {
+    int nargs = 0;
+    for (; nargs < node->args_count; nargs++) {
+      gen(node->args[nargs]);
+    }
+
+    char reg[6][4] = { "rdi", "rsi", "rdx", "rcx", "r8", "r9" };
+    for (int i = nargs - 1; i >= 0; i--) {
+      if (i < node->args_count) {
+        printf("  pop %s\n", reg[i]);
+      }
+    }
+
     printf("  call %s\n", node->funcname);
     printf("  push rax\n");
     return;

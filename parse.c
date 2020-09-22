@@ -128,10 +128,32 @@ void program() {
   code[i] = NULL;
 }
 
+// func-args = "(" (assign ("," assign)*)? ")"
+static Node *func_args(void) {
+  Node *node = malloc(sizeof(Node));
+  node->ty = ND_FUNC_CALL;
+  node->funcname = strndup(tokens[pos-2].name, tokens[pos-2].len);
+  node->args_count = 0;
+  if (consume(")"))
+    return node;
+
+  node->args[0] = assign();
+  node->args_count++;
+  while (consume(",")) {
+    if (node->args_count >= 6) {
+      error(pos, "too many arguments.");
+    }
+    node->args[node->args_count++] = assign();
+  }
+  expect(__LINE__, ')', tokens[pos].ty);
+  return node;
+}
+
 // term = "(" expr ")" | ident func-args? | num
 Node *term() {
+  Node *node = malloc(sizeof(Node));
   if (consume("(")) {
-    Node *node = expr();
+    node = expr();
     if (!consume(")")) {
       error(pos, "開きカッコ '(' に対応する閉じカッコ ')' がありません");
     }
@@ -142,10 +164,7 @@ Node *term() {
   if (tokens[pos].ty == TK_IDENT) {
     if (tokens[pos+1].ty == '(') {
       pos += 2;
-      expect(__LINE__, ')', tokens[pos].ty);
-      Node *node = malloc(sizeof(Node));
-      node->ty = ND_FUNC_CALL;
-      node->funcname = strndup(tokens[pos-3].name, tokens[pos-3].len);
+      node = func_args();
       return node;
     }
     return new_node_ident(tokens[pos++].name);

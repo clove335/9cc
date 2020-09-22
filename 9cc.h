@@ -58,6 +58,8 @@ typedef struct Node {
 
   Vector *statements; /* Block */
   char *funcname;     /* Function call */
+  struct Node *args[6];         /* arguments for Functions */
+  int args_count;
 
   int val;            /* Use only when ty is ND_NUM */
   char *name;         /* Use only when ty is ND_IDENT */

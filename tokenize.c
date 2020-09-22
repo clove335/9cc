@@ -121,7 +121,7 @@ void *tokenize(char *p) {
       
     if (*p == '+' || *p == '-' || *p == '*' || *p == '/' 
         || *p == '(' || *p == ')' || *p == '=' || *p == ';'
-        || *p == '{' || *p == '}') {
+        || *p == '{' || *p == '}' || *p == ',') {
       tokens[i].ty = *p;
       tokens[i].input = p;
       tokens[i].len = 1;
@@ -139,7 +139,7 @@ void *tokenize(char *p) {
       continue;
     }
       
-    if ('a' <= *p && *p <= 'z') {
+    if (('a' <= *p && *p <= 'z') || *p == '_') {
       char save[256];
       int count = 0;
 
@@ -148,14 +148,14 @@ void *tokenize(char *p) {
       do {
         save[count++] = *p;
         p++;
-      } while (isalnum(*p));
+      } while (isalnum(*p) || *p == '_');
       save[count] = '\0';
 
       char *copy = malloc(sizeof(char)*count);
       strcpy(copy, save);
       tokens[i].name = copy;
       tokens[i].input = copy;
-      tokens[i].len = sizeof(copy);
+      tokens[i].len = count;
       i++;
       continue;
     }

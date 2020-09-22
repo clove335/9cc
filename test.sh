@@ -35,7 +35,6 @@ test_function_call() {
   stub=$2
   output=$3
   
-  #echo "$exp" | ./9cc > out.s
   ./9cc "$exp" > out.s
   if [ $? -ne 0 ]; then
     echo failed to generate assembly from "$exp"
@@ -76,12 +75,6 @@ test_function_call() {
   fi
 
   echo "$output" | diff - stdout.txt > /dev/null 
-  #echo output
-  #echo "$output"
-  #echo stdout
-  #cat stdout.txt
-  #echo dev/null
-  #cat /dev/null
   if [ $? -ne 0 ]; then
     echo expect stdout to be \""$output"\", but got \""$(cat stdout.txt)"\".
     cat out.s
@@ -169,5 +162,8 @@ assert  5 "x = ret5(); return x;"
 assert  5 "return ret5();"
 test_function_call "foo();"  "func.c" "OK"
 test_function_call "test();" "tests/func_call.c" "a test for function call: OK."
+test_function_call "test_underscore();" "tests/func_call.c" "a test for function with _: OK."
+test_function_call "x = foo_with_arguments(2, 3);"  "func.c" "2, 3"
+test_function_call "sum(5);"  "func.c" "a result: 15 -> a test for sum: OK."
 
 echo OK
