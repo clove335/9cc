@@ -164,6 +164,6 @@ test_function_call "foo();"  "func.c" "OK"
 test_function_call "test();" "tests/func_call.c" "a test for function call: OK."
 test_function_call "test_underscore();" "tests/func_call.c" "a test for function with _: OK."
 test_function_call "x = foo_with_arguments(2, 3);"  "func.c" "2, 3"
-test_function_call "sum(5);"  "func.c" "a result: 15 -> a test for sum: OK."
+test_function_call "sum(10);"  "func.c" "a result: 55 -> a test for sum: OK."
 
 echo OK

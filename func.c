@@ -2,8 +2,6 @@
 foo(void) { printf("OK\n"); return 0; }
 foo_with_arguments(first, second) { 
     printf("%d, %d\n", first, second);
-    //printf("first + second = %d\n", first + second);
-    //printf("OK\n"); 
     return 0;
 }
 int sum(int n) {
