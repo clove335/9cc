@@ -8,6 +8,29 @@ assert() {
   expected="$1"
   input="$2"
 
+  ./9cc "main() { $input }" > tmp.s
+  if [ "$?" != 0 ]; then
+    echo "9cc error : $input"
+    exit 1
+  fi
+  gcc -static -o tmp tmp.s tmp2.o
+  ./tmp
+  actual="$?"
+
+  if [ "$actual" = "$expected" ]; then
+    echo "$input => $actual"
+  else
+    echo "compile error : $input"
+    nl -w2 tmp.s
+    echo "$expected expected, but got $actual"
+    exit 1
+  fi
+}
+
+test_program() {
+  expected="$1"
+  input="$2"
+
   ./9cc "$input" > tmp.s
   if [ "$?" != 0 ]; then
     echo "9cc error : $input"
@@ -16,15 +39,12 @@ assert() {
   gcc -static -o tmp tmp.s tmp2.o
   ./tmp
   actual="$?"
-  if [ "$?" != 0 ]; then
-    echo "compile error : $input"
-    nl -w2 tmp.s
-    exit 1
-  fi
-  
+
   if [ "$actual" = "$expected" ]; then
     echo "$input => $actual"
   else
+    echo "compile error : $input"
+    nl -w2 tmp.s
     echo "$expected expected, but got $actual"
     exit 1
   fi
@@ -35,7 +55,7 @@ test_function_call() {
   stub=$2
   output=$3
   
-  ./9cc "$exp" > out.s
+  ./9cc "main() { $exp }" > out.s
   if [ $? -ne 0 ]; then
     echo failed to generate assembly from "$exp"
     rm out.s
@@ -89,6 +109,9 @@ test_function_call() {
 
 assert  0 "0;"
 assert 42 "42;"
+assert 6 '2+4;'
+assert 5 '9-4;'
+assert 9 '3*3;'
 assert 21 '5+20-4;'
 assert 41 " 12 + 34 - 5;" 
 assert 47 "5+6*7;"
@@ -96,6 +119,7 @@ assert  5 "15/3;"
 assert 77 "(5+6)*7;"
 assert  3 "15/(3+2);"
 assert 12 "a=z=3*2;a+z;"
+assert  3 "a = 3; a;"
 assert  6 "a = 3; a = a+3;"
 assert 22 "b = 5 * 6 - 8;"
 assert 12 "6*4-3*4;"
@@ -160,10 +184,23 @@ assert  7 "x = 3; if (x == 1) { x = x * 5; } else if (x == 2) { x = x/2; } else 
 assert  3 "x = ret(); return x;"
 assert  5 "x = ret5(); return x;"
 assert  5 "return ret5();"
+
 test_function_call "foo();"  "func.c" "OK"
 test_function_call "test();" "tests/func_call.c" "a test for function call: OK."
 test_function_call "test_underscore();" "tests/func_call.c" "a test for function with _: OK."
 test_function_call "x = foo_with_arguments(2, 3);"  "func.c" "2, 3"
+test_function_call "x = foo_with_6_arguments(2, 3, 4, 5, 6, 7);"  "func.c" "2, 3, 4, 5, 6, 7"
 test_function_call "sum(10);"  "func.c" "a result: 55 -> a test for sum: OK."
+
+test_program 1 "f() { 1; } main() { f(); }"
+test_program 6 "f() { 6; } main() { r = f(); return r; }"
+test_program 10 "f() { return 10; } main() { r = f(); return r; }"
+test_program 10 "f() { x = 10;  x; } main() { r = f(); return r; }"
+test_program 10 "f() { x = 5;  return x + 5; } main() { r = f(); return r; }"
+test_program 7 "f() { x = 10; y = 3;  x - y; } main() { r = f(); return r; }"
+test_program 30 "f() { x = 10; y = 3;  x * y; } main() { r = f(); return r; }"
+test_program 3 "f() { x = 10; y = 3;  x / y; } main() { r = f(); return r; }"
+test_program 55 "f() { x = 0; y = 1; z = 1; c = 2; n = 10; while (c <= n) { z = x + y; x = y; y = z; c = c + 1; } return z; } main() { r = f(); return r; }"
+test_program 8 "f() { x = 2; x; } g() { y = 4; y; } main() { f() * g(); }"
 
 echo OK

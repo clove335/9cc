@@ -62,6 +62,10 @@ Map *new_map() {
 void map_put(Map *map, char *key, int *val) {
   vec_push(map->keys, key);
   vec_push(map->vals, val);
+  map->count++;
+  if (map->count >= 1024) {
+    error(pos, "The number of idents is less than 1024.");
+  }
 }
 
 void *map_get(Map *map, char *key) {
@@ -71,5 +75,22 @@ void *map_get(Map *map, char *key) {
     }
   }
   return NULL;
+}
+
+int map_count(Map *map)
+{
+  return map->count;
+}
+
+void map_clear(Map *map)
+{
+  map->count = 0;
+}
+
+Symbol *new_symbol()
+{
+  Symbol *symbol = (Symbol *) malloc(sizeof(Symbol));
+
+  return symbol;
 }
 

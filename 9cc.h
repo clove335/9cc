@@ -28,10 +28,12 @@ enum {
   ND_RETURN,
   ND_EXPR_STMT,
   ND_IF,
-  ND_WHILE,
-  ND_FOR,
-  ND_BLOCK,
-  ND_FUNC_CALL
+  ND_WHILE,	// "while"
+  ND_FOR,	// "for"
+  ND_BLOCK,	// { ... }
+  ND_FUNC_CALL,
+  ND_FUNC_DEF,
+  ND_PROGRAM
 };
 
 typedef struct {
@@ -41,9 +43,14 @@ typedef struct {
 } Vector;
 
 typedef struct {
+  int count;
   Vector *keys;
   Vector *vals;
 } Map;
+
+typedef struct symbol {
+  int position;
+} Symbol;
 
 typedef struct Node {
   int ty;             /* Operator or ND_NUM */
@@ -57,9 +64,12 @@ typedef struct Node {
   struct Node *after;
 
   Vector *statements; /* Block */
+  Vector *definitions; /* Block */
   char *funcname;     /* Function call */
   struct Node *args[6];         /* arguments for Functions */
   int args_count;
+  int vars_count;
+  Symbol *symbol;
 
   int val;            /* Use only when ty is ND_NUM */
   char *name;         /* Use only when ty is ND_IDENT */
@@ -74,9 +84,11 @@ typedef struct {
 } Token;  
 
 extern int pos;
-extern Token tokens[100];
+extern Token tokens[1024];
 extern Map *env;
-extern Node *code[1000];
+extern Node *code[1024];
+extern Map *func_symbols;
+extern Map *symbols;
 
 extern Vector *new_vector();
 extern void vec_push(Vector *vec, void *elem);
@@ -85,6 +97,10 @@ extern void test_map();
 extern Map *new_map();
 extern void map_put(Map *map, char *key, int *val);
 extern void *map_get(Map *map, char *key); 
+extern void *map_search(Map *map, char *key);
+Symbol *new_symbol();
+extern int map_count(Map *map);
+extern void map_clear(Map *map);
 
 void error(int i, char *s);
 void *tokenize(char *p);
@@ -92,7 +108,6 @@ int expect(int line, int expected, int actual);
 void runtest(); 
 Node *new_node(int ty, Node *lhs, Node *rhs);
 Node *new_node_num(int val);
-/*<<<<<<< HEAD*/
 Node *new_node_ident(char *name);
 bool consume(char *op);
 void gen(Node *node);
@@ -104,7 +119,8 @@ Node *unary();
 Node *assign();
 Node *stmt();
 void program();
+void codegen();
 Node *equality();
 Node *expr();
+Node *function_definition();
 
-/*>>>>>>> fa0fd4fd1b67a8c00c5534b101c8609ca324be23*/

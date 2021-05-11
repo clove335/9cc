@@ -1,6 +1,11 @@
-#include <string.h>
-#include <stdlib.h>
 #include "9cc.h"
+#include <stdlib.h>
+#include <string.h>
+
+Token tokens[1024];
+Node *code[1024];
+Map *func_symbols;
+Map *symbols;
 
 Node *new_node(int ty, Node *lhs, Node *rhs) {
   Node *node = malloc(sizeof(Node));
@@ -27,15 +32,13 @@ Node *new_node_num(int val) {
 Node *assign() {
   Node *node = equality();
   if (consume("=")) {
-    map_put(env, node->name, (void *) (long) env->keys->len);
+    map_put(env, node->name, (void *)(long)env->keys->len);
     return new_node('=', node, assign());
   }
   return node;
 }
 
-Node *expr() {
-  return assign();
-}
+Node *expr() { return assign(); }
 
 Node *read_expr_stmt(void) {
   Node *node;
@@ -69,7 +72,7 @@ Node *stmt() {
       node->els = stmt();
     return node;
   }
-  
+
   if (consume("while")) {
     node = malloc(sizeof(Node));
     node->ty = ND_WHILE;
@@ -114,16 +117,28 @@ Node *stmt() {
   }
 
   if (!consume(";")) {
-    error(pos,";");
+    error(pos, ";");
   }
   return node;
 }
 
 void program() {
-  int i = 0;
+  Node *node = malloc(sizeof(Node));
+  node->definitions = new_vector();
+  node->funcname = "";
 
-  while (tokens[pos].ty != TK_EOF) {
-    code[i++] = stmt();
+  func_symbols = new_map();
+  symbols = new_map();
+
+  // while (tokens[pos].ty != TK_EOF) { 改造中
+  int i = 0;
+  while (1) {
+    if (tokens[pos].ty == '}' || tokens[pos].ty == TK_EOF)
+      break;
+    node = function_definition();
+    vec_push(node->definitions, (void *) node);
+    code[i] = node;
+    i++;
   }
   code[i] = NULL;
 }
@@ -132,20 +147,47 @@ void program() {
 static Node *func_args(void) {
   Node *node = malloc(sizeof(Node));
   node->ty = ND_FUNC_CALL;
-  node->funcname = strndup(tokens[pos-2].name, tokens[pos-2].len);
+  node->funcname = strndup(tokens[pos - 1].name, tokens[pos - 1].len);
   node->args_count = 0;
-  if (consume(")"))
-    return node;
+  if (consume("("))
+    if (consume(")"))
+      return node;
 
   node->args[0] = assign();
   node->args_count++;
   while (consume(",")) {
-    if (node->args_count >= 6) {
+    if (node->args_count > 6) {
       error(pos, "too many arguments.");
     }
     node->args[node->args_count++] = assign();
   }
   expect(__LINE__, ')', tokens[pos].ty);
+  return node;
+}
+
+Node *function_definition() {
+  if (tokens[pos].ty != TK_IDENT) {
+    error(pos, "Function definition should begin with TK_IDENT.");
+  }
+
+  Symbol *func_pos = (Symbol *)new_symbol();
+  map_put(func_symbols, tokens[func_pos->position].name, &func_pos->position);
+  consume("(");
+  consume(")");
+
+  map_clear(symbols);
+
+  Node *node = malloc(sizeof(Node));
+  node->definitions = new_vector();
+  node->ty = ND_FUNC_DEF;
+  node->funcname = tokens[pos].name;
+  Node *comp_stmt = stmt();
+  node->lhs = comp_stmt;
+  node->vars_count = map_count(symbols);
+  //while (tokens[pos].ty != TK_EOF) {
+  //  node->lhs = stmt();
+  //}
+
   return node;
 }
 
@@ -159,21 +201,32 @@ Node *term() {
     }
     return node;
   }
-  
-/*<<<<<<< HEAD:9cc.c*/
+
   if (tokens[pos].ty == TK_IDENT) {
-    if (tokens[pos+1].ty == '(') {
-      pos += 2;
+    if (tokens[pos + 1].ty == '(') {
+      pos++;
       node = func_args();
       return node;
     }
-    return new_node_ident(tokens[pos++].name);
+    node = new_node_ident(tokens[pos].name);
+    if (map_get(func_symbols, tokens[pos].name)) {
+      node->symbol = (Symbol *) map_get(func_symbols, tokens[pos].name);
+    } else {
+      if (!map_get(symbols, tokens[pos].name)) { 
+	Symbol *symbol = new_symbol();
+	//symbol->position = pos;
+	symbol->position = map_count(symbols) * 4 + 4;
+	map_put(symbols, tokens[pos].name, &symbol->position);
+      }
+      node->symbol = (Symbol *) map_get(symbols, tokens[pos].name);
+    }
+    pos++;
+    return node;
   }
 
   if (tokens[pos].ty == TK_NUM) {
     return new_node_num(tokens[pos++].val);
   }
-
 }
 
 Node *mul() {
@@ -182,11 +235,9 @@ Node *mul() {
   for (;;) {
     if (consume("*")) {
       node = new_node('*', node, unary());
-    }
-    else if (consume("/")) {
+    } else if (consume("/")) {
       node = new_node('/', node, unary());
-    }
-    else {
+    } else {
       return node;
     }
   }
@@ -198,11 +249,9 @@ Node *add() {
   for (;;) {
     if (consume("+")) {
       node = new_node('+', node, mul());
-    }
-    else if (consume("-")) {
+    } else if (consume("-")) {
       node = new_node('-', node, mul());
-    }
-    else {
+    } else {
       return node;
     }
   }
@@ -224,17 +273,13 @@ Node *rel() {
   for (;;) {
     if (consume("<=")) {
       node = new_node(ND_L_EQ, node, add());
-    }
-    else if (consume(">=")) {
+    } else if (consume(">=")) {
       node = new_node(ND_L_EQ, add(), node);
-    }
-    else if (consume("<"))  {
+    } else if (consume("<")) {
       node = new_node(ND_L_TH, node, add());
-    }
-    else if (consume(">"))  {
+    } else if (consume(">")) {
       node = new_node(ND_L_TH, add(), node);
-    }
-    else {
+    } else {
       return node;
     }
   }
@@ -245,13 +290,10 @@ Node *equality() {
   for (;;) {
     if (consume("==")) {
       node = new_node(ND_EQ, node, rel());
-    }
-    else if (consume("!=")) {
+    } else if (consume("!=")) {
       node = new_node(ND_NOT_EQ, node, rel());
-    } 
-    else { 
+    } else {
       return node;
     }
   }
 }
-
