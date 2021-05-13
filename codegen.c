@@ -3,16 +3,15 @@
 #include <string.h>
 #include "9cc.h"
 
+char args_reg[6][4] = { "rdi", "rsi", "rdx", "rcx", "r8", "r9" };
 static int labelnum = 1;
 
 void gen_lval(Node *node) {
   if (node->ty != ND_IDENT)
     error(pos, "代入の左辺値が変数ではありません");
 
-  //int count = (long)map_get(env, node->name);
   int count = (long) node->symbol->position;
   printf("  mov rax, rbp\n");
-  //printf("  sub rax, %d\n", count * 8);
   printf("  sub rax, %d\n", count * 4);
   printf("  push rax\n");
 }
@@ -25,8 +24,13 @@ void gen_func_def(Node *node) {
   printf("%s:\n", node->funcname);
   printf("  push rbp\n");      /* prologue. 26 Sizes of variable. */
   printf("  mov rbp, rsp\n");
-  printf("  sub rsp, %d\n", env->keys->len * 8);
-  //printf("  sub rsp, %d\n", node->vars_count * 8);
+  printf("  sub rsp, %d\n", 26 * 8);
+
+  for (int i = 0; i < node->params_count; i++) {
+    printf("  mov rax, %s\n", args_reg[i]);
+    printf("  mov [rbp-%d], rax\n", i * 16 + 16);
+  }
+
   gen(node);
   printf("  pop rax\n");  /* Load the value of all equatation to RAX */
 
@@ -136,10 +140,9 @@ void gen(Node *node) {
       gen(node->args[nargs]);
     }
 
-    char reg[6][4] = { "rdi", "rsi", "rdx", "rcx", "r8", "r9" };
     for (int i = nargs - 1; i >= 0; i--) {
       if (i < node->args_count) {
-        printf("  pop %s\n", reg[i]);
+        printf("  pop %s\n", args_reg[i]);
       }
     }
 

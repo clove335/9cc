@@ -203,4 +203,8 @@ test_program 3 "f() { x = 10; y = 3;  x / y; } main() { r = f(); return r; }"
 test_program 55 "f() { x = 0; y = 1; z = 1; c = 2; n = 10; while (c <= n) { z = x + y; x = y; y = z; c = c + 1; } return z; } main() { r = f(); return r; }"
 test_program 8 "f() { x = 2; x; } g() { y = 4; y; } main() { f() * g(); }"
 
+test_program 4 "f(x) { x * x; } main() { f(2); }"
+test_program 60 "f(x) { y = 3; z = 4; return x * y * z; } main() { a = f(5); return a; }"
+test_program 120 "f(x, y, z) { return x * y * z; } main() { a = f(4, 5, 6); return a; }"
+
 echo OK

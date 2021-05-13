@@ -130,7 +130,6 @@ void program() {
   func_symbols = new_map();
   symbols = new_map();
 
-  // while (tokens[pos].ty != TK_EOF) { 改造中
   int i = 0;
   while (1) {
     if (tokens[pos].ty == '}' || tokens[pos].ty == TK_EOF)
@@ -171,22 +170,32 @@ Node *function_definition() {
   }
 
   Symbol *func_pos = (Symbol *)new_symbol();
-  map_put(func_symbols, tokens[func_pos->position].name, &func_pos->position);
+  map_put(func_symbols, tokens[pos].name, &func_pos->position);
+  pos++;
   consume("(");
-  consume(")");
 
   map_clear(symbols);
+  int params_count = 0;
+  while (!consume(")")) {
+    if (consume(",")) continue;
+    if (params_count >= 6) {
+      error(pos, "Too many parameters.");
+    }
+
+    Symbol *param = new_symbol();
+    param->position = map_count(symbols) * 4 + 4;
+    map_put(symbols, tokens[pos++].name, &param->position);
+    params_count++;
+  }
 
   Node *node = malloc(sizeof(Node));
   node->definitions = new_vector();
   node->ty = ND_FUNC_DEF;
-  node->funcname = tokens[pos].name;
+  node->funcname = func_symbols->keys->data[func_symbols->count - 1];
   Node *comp_stmt = stmt();
   node->lhs = comp_stmt;
   node->vars_count = map_count(symbols);
-  //while (tokens[pos].ty != TK_EOF) {
-  //  node->lhs = stmt();
-  //}
+  node->params_count = params_count;
 
   return node;
 }
@@ -214,7 +223,6 @@ Node *term() {
     } else {
       if (!map_get(symbols, tokens[pos].name)) { 
 	Symbol *symbol = new_symbol();
-	//symbol->position = pos;
 	symbol->position = map_count(symbols) * 4 + 4;
 	map_put(symbols, tokens[pos].name, &symbol->position);
       }

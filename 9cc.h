@@ -69,6 +69,7 @@ typedef struct Node {
   struct Node *args[6];         /* arguments for Functions */
   int args_count;
   int vars_count;
+  int params_count;
   Symbol *symbol;
 
   int val;            /* Use only when ty is ND_NUM */
