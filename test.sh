@@ -107,6 +107,13 @@ test_function_call() {
   rm out.s out.o stub.o out stdout.txt
 }
 
+test_error() {
+  input="$1"
+  output="$2"
+  ./9cc "$input" 2> tests/stderr.txt && "Compilation of \"$input\" unexpectedly succeeded."
+  echo "$output" | diff - tests/stderr.txt || "Failed. Error message of \"$input\" should be \"$output\"."
+}
+
 assert  0 "0;"
 assert 42 "42;"
 assert 6 '2+4;'
@@ -206,5 +213,16 @@ test_program 8 "f() { x = 2; x; } g() { y = 4; y; } main() { f() * g(); }"
 test_program 4 "f(x) { x * x; } main() { f(2); }"
 test_program 60 "f(x) { y = 3; z = 4; return x * y * z; } main() { a = f(5); return a; }"
 test_program 120 "f(x, y, z) { return x * y * z; } main() { a = f(4, 5, 6); return a; }"
+
+test_error "main() { b = a * (5 + 3; return b }" "ERROR: expected ')' for pair of '(', but got ; return b }"
+test_error "main() { b = a * 5 + 3); return b; }" "ERROR: expected ;, but got ); return b; }"
+test_error "main() { a = 5; b = 3; return a * b }" "ERROR: expected ;, but got }"
+test_error "main() { b = a * 3; return b; " "ERROR: expected }, but got "
+test_error "main() { 1 = 2 + 3; }" "ERROR: expected identifier, but got "
+test_error "main() { a + 3 = 5; a * b }" "ERROR: expected ;, but got }"
+test_error "f(a, b) { return a * b  main() { a = f(4, 5); return a; }" "ERROR: expected ;, but got main"
+test_error "f(a, b) { return a * b;  main() { a = f(4, 5); return a; }" "ERROR: expected ;, but got "
+test_error "f(a, b) { return a * b } main() { a = f(4, 5); return a; }" "ERROR: expected ;, but got } main() { a = f(4, 5); return a; }"
+test_error "f(a, b, c, d, e, f, g) { return a * b * c * d * e * f * g; } main() { a = f(4, 5, 6, 7, 8, 9, 10); return a; }" "ERROR: expected Up to 6 parameters, but got g"
 
 echo OK

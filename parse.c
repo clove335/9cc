@@ -65,7 +65,7 @@ Node *stmt() {
     expect(__LINE__, '(', tokens[pos].ty);
     node->cond = expr();
     if (!consume(")")) {
-      error(pos, "開きカッコ '(' に対応する閉じカッコ ')' がありません");
+      error(pos, "')' for pair of '('");
     }
     node->then = stmt();
     if (consume("else"))
@@ -79,7 +79,7 @@ Node *stmt() {
     expect(__LINE__, '(', tokens[pos].ty);
     node->cond = expr();
     if (!consume(")")) {
-      error(pos, "開きカッコ '(' に対応する閉じカッコ ')' がありません");
+      error(pos, "')' for pair of '('");
     }
     node->then = stmt();
     return node;
@@ -116,6 +116,11 @@ Node *stmt() {
     return node;
   }
 
+  if (tokens[pos].ty == ';' &&
+      tokens[pos + 1].ty == TK_EOF)
+  {
+    error(++pos, "}");
+  }
   if (!consume(";")) {
     error(pos, ";");
   }
@@ -179,7 +184,7 @@ Node *function_definition() {
   while (!consume(")")) {
     if (consume(",")) continue;
     if (params_count >= 6) {
-      error(pos, "Too many parameters.");
+      error(pos, "Up to 6 parameters");
     }
 
     Symbol *param = new_symbol();
@@ -206,7 +211,7 @@ Node *term() {
   if (consume("(")) {
     node = expr();
     if (!consume(")")) {
-      error(pos, "開きカッコ '(' に対応する閉じカッコ ')' がありません");
+      error(pos, "')' for pair of '('");
     }
     return node;
   }

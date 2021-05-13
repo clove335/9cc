@@ -8,7 +8,7 @@ static int labelnum = 1;
 
 void gen_lval(Node *node) {
   if (node->ty != ND_IDENT)
-    error(pos, "代入の左辺値が変数ではありません");
+    error(pos, "identifier");
 
   int count = (long) node->symbol->position;
   printf("  mov rax, rbp\n");
