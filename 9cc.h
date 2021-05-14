@@ -33,7 +33,9 @@ enum {
   ND_BLOCK,	// { ... }
   ND_FUNC_CALL,
   ND_FUNC_DEF,
-  ND_PROGRAM
+  ND_PROGRAM,
+  ND_ADDRESS,
+  ND_DEREF
 };
 
 typedef struct {

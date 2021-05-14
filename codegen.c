@@ -158,6 +158,20 @@ void gen(Node *node) {
     printf("  jmp .L.return\n");      /* and return it.                          */
     return;
   }
+
+  if ((*node).ty == ND_ADDRESS) {
+    gen_lval(node->lhs);
+    return;
+  }
+
+  if ((*node).ty == ND_DEREF) {
+    gen(node->lhs);
+    printf("  pop rdi\n");
+    printf("  pop rax\n");
+    printf("  mov rax, [rax]\n");
+    printf("  push rax\n");
+    return;
+  }
   
   if (node->lhs != 0)
     gen(node->lhs);

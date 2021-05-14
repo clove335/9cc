@@ -213,6 +213,11 @@ test_program 8 "f() { x = 2; x; } g() { y = 4; y; } main() { f() * g(); }"
 test_program 4 "f(x) { x * x; } main() { f(2); }"
 test_program 60 "f(x) { y = 3; z = 4; return x * y * z; } main() { a = f(5); return a; }"
 test_program 120 "f(x, y, z) { return x * y * z; } main() { a = f(4, 5, 6); return a; }"
+test_program 8 "fi(x) { if (x == 1) return 1; if (x == 2) return 1; a = fi(x-2) + fi(x-1); return a; } main() { a = fi(6); return a; }"
+
+test_program 6 "main() { a = 6; b = &a; return *b; }"
+test_program 18 "main() { a = 6 * 3; b = &a; return *b; }"
+test_program 6 "main() { a = 6; b = 7; c = &b + 16; return *c; }"
 
 test_error "main() { b = a * (5 + 3; return b }" "ERROR: expected ')' for pair of '(', but got ; return b }"
 test_error "main() { b = a * 5 + 3); return b; }" "ERROR: expected ;, but got ); return b; }"
@@ -224,5 +229,6 @@ test_error "f(a, b) { return a * b  main() { a = f(4, 5); return a; }" "ERROR: e
 test_error "f(a, b) { return a * b;  main() { a = f(4, 5); return a; }" "ERROR: expected ;, but got "
 test_error "f(a, b) { return a * b } main() { a = f(4, 5); return a; }" "ERROR: expected ;, but got } main() { a = f(4, 5); return a; }"
 test_error "f(a, b, c, d, e, f, g) { return a * b * c * d * e * f * g; } main() { a = f(4, 5, 6, 7, 8, 9, 10); return a; }" "ERROR: expected Up to 6 parameters, but got g"
+test_error "main() { *a = 6 * 3; &b = a; return b; }" "ERROR: expected identifier, but got "
 
 echo OK

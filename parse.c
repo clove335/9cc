@@ -277,6 +277,18 @@ Node *unary() {
   if (consume("-")) {
     return new_node('-', new_node_num(0), term());
   }
+  if (consume("&")) {
+    Node *node = malloc(sizeof(Node));
+    node->ty = ND_ADDRESS;
+    node->lhs = unary();
+    return node;
+  }
+  if (consume("*")) {
+    Node *node = malloc(sizeof(Node));
+    node->ty = ND_DEREF;
+    node->lhs = unary();
+    return node;
+  }
   return term();
 }
 
