@@ -15,6 +15,7 @@ enum {
   TK_ELSE,
   TK_WHILE,
   TK_FOR,
+  TK_INT_DECL,
   TK_EOF
 };
 

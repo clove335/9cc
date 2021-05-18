@@ -177,10 +177,10 @@ Node *function_definition() {
   Symbol *func_pos = (Symbol *)new_symbol();
   map_put(func_symbols, tokens[pos].name, &func_pos->position);
   pos++;
-  consume("(");
 
   map_clear(symbols);
   int params_count = 0;
+  consume("(");
   while (!consume(")")) {
     if (consume(",")) continue;
     if (params_count >= 6) {
@@ -222,16 +222,14 @@ Node *term() {
       node = func_args();
       return node;
     }
+    if (!map_get(symbols, tokens[pos].name)) error(pos, "defined identifier");
     node = new_node_ident(tokens[pos].name);
     if (map_get(func_symbols, tokens[pos].name)) {
       node->symbol = (Symbol *) map_get(func_symbols, tokens[pos].name);
-    } else {
-      if (!map_get(symbols, tokens[pos].name)) { 
-	Symbol *symbol = new_symbol();
-	symbol->position = map_count(symbols) * 4 + 4;
-	map_put(symbols, tokens[pos].name, &symbol->position);
-      }
+    } else if (map_get(symbols, tokens[pos].name)) {
       node->symbol = (Symbol *) map_get(symbols, tokens[pos].name);
+    } else {
+      node->symbol = NULL;
     }
     pos++;
     return node;
@@ -240,6 +238,21 @@ Node *term() {
   if (tokens[pos].ty == TK_NUM) {
     return new_node_num(tokens[pos++].val);
   }
+
+  if (tokens[pos].ty == TK_INT_DECL) {
+    if (tokens[pos + 1].ty != TK_IDENT)
+      error(pos + 1, "identifier after int declaration");
+    if (tokens[pos + 2].ty != ';')
+      error(pos + 2, "';' after int declaration and identifier");
+    if (!map_get(symbols, tokens[pos + 1].name)) {
+      Symbol *symbol = new_symbol();
+      symbol->position = map_count(symbols) * 4 + 4;
+      map_put(symbols, tokens[pos + 1].name, &symbol->position);
+    }
+    pos += 2;
+    return node;
+  }
+
 }
 
 Node *mul() {

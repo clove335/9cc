@@ -55,6 +55,7 @@ void gen(Node *node) {
   }
 
   if ((*node).ty == ND_IDENT) {
+    if (!(*node).symbol) error(pos, "defined identifier");
     gen_lval(node);
     printf("  pop rax\n");
     printf("  mov rax, [rax]\n");

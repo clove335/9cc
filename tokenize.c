@@ -138,7 +138,16 @@ void *tokenize(char *p) {
       p += 6;
       continue;
     }
-      
+
+    if (strncmp(p, "int", 3) == 0) {
+       tokens[i].ty = TK_INT_DECL;
+       tokens[i].len = 3;
+       tokens[i].input = "int";
+       i++;
+       p += 3;
+       continue;
+     }
+
     if (('a' <= *p && *p <= 'z') || *p == '_') {
       char save[256];
       int count = 0;
