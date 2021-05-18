@@ -170,6 +170,9 @@ static Node *func_args(void) {
 }
 
 Node *function_definition() {
+  if (!consume("int")) {
+    error(pos, "int");
+  }
   if (tokens[pos].ty != TK_IDENT) {
     error(pos, "Function definition should begin with TK_IDENT.");
   }
@@ -182,9 +185,13 @@ Node *function_definition() {
   int params_count = 0;
   consume("(");
   while (!consume(")")) {
-    if (consume(",")) continue;
+    if (consume(",") || consume("int")) continue;
     if (params_count >= 6) {
       error(pos, "Up to 6 parameters");
+    }
+    if (tokens[pos].ty == TK_IDENT &&
+        tokens[pos - 1].ty != TK_INT_DECL) {
+      error(pos, "defined identifier");
     }
 
     Symbol *param = new_symbol();

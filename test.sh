@@ -8,7 +8,7 @@ assert() {
   expected="$1"
   input="$2"
 
-  ./9cc "main() { $input }" > tmp.s
+  ./9cc "int main() { $input }" > tmp.s
   if [ "$?" != 0 ]; then
     echo "9cc error : $input"
     exit 1
@@ -55,7 +55,7 @@ test_function_call() {
   stub=$2
   output=$3
   
-  ./9cc "main() { $exp }" > out.s
+  ./9cc "int main() { $exp }" > out.s
   if [ $? -ne 0 ]; then
     echo failed to generate assembly from "$exp"
     rm out.s
@@ -199,40 +199,43 @@ test_function_call "int x; x = foo_with_arguments(2, 3);"  "func.c" "2, 3"
 test_function_call "int x; x = foo_with_6_arguments(2, 3, 4, 5, 6, 7);"  "func.c" "2, 3, 4, 5, 6, 7"
 test_function_call "int x; sum(10);"  "func.c" "a result: 55 -> a test for sum: OK."
 
-test_program 1 "f() { 1; } main() { f(); }"
-test_program 6 "f() { 6; } main() { int r; r = f(); return r; }"
-test_program 10 "f() { return 10; } main() { int r; r = f(); return r; }"
-test_program 10 "f() { int x; x = 10;  x; } main() { int r; r = f(); return r; }"
-test_program 10 "f() { int x; x = 5;  return x + 5; } main() { int r; r = f(); return r; }"
-test_program 7 "f() { int x; x = 10; int y; y = 3;  x - y; } main() { int r; r = f(); return r; }"
-test_program 30 "f() { int x; x = 10; int y; y = 3;  x * y; } main() { int r; r = f(); return r; }"
-test_program 3 "f() { int x; x = 10; int y; y = 3;  x / y; } main() { int r; r = f(); return r; }"
-test_program 55 "f() { int x; x = 0; int y; y = 1; int z; z = 1; int c; c = 2; int n; n = 10; while (c <= n) { z = x + y; x = y; y = z; c = c + 1; } return z; } main() { int r; r = f(); return r; }"
-test_program 8 "f() { int x; x = 2; x; } g() { int y; y = 4; y; } main() { f() * g(); }"
+test_program 1 "int f() { 1; } int main() { f(); }"
+test_program 6 "int f() { 6; } int main() { int r; r = f(); return r; }"
+test_program 10 "int f() { return 10; } int main() { int r; r = f(); return r; }"
+test_program 10 "int f() { int x; x = 10;  x; } int main() { int r; r = f(); return r; }"
+test_program 10 "int f() { int x; x = 5;  return x + 5; } int main() { int r; r = f(); return r; }"
+test_program 7 "int f() { int x; x = 10; int y; y = 3;  x - y; } int main() { int r; r = f(); return r; }"
+test_program 30 "int f() { int x; x = 10; int y; y = 3;  x * y; } int main() { int r; r = f(); return r; }"
+test_program 3 "int f() { int x; x = 10; int y; y = 3;  x / y; } int main() { int r; r = f(); return r; }"
+test_program 55 "int f() { int x; x = 0; int y; y = 1; int z; z = 1; int c; c = 2; int n; n = 10; while (c <= n) { z = x + y; x = y; y = z; c = c + 1; } return z; } int main() { int r; r = f(); return r; }"
+test_program 8 "int f() { int x; x = 2; x; } int g() { int y; y = 4; y; } int main() { f() * g(); }"
 
-test_program 4 "f(x) { x * x; } main() { f(2); }"
-test_program 60 "f(x) { int y; y = 3; int z; z = 4; return x * y * z; } main() { int a; a = f(5); return a; }"
-test_program 120 "f(x, y, z) { return x * y * z; } main() { int a; a = f(4, 5, 6); return a; }"
-test_program 8 "fi(x) { if (x == 1) return 1; if (x == 2) return 1; int a; a = fi(x-2) + fi(x-1); return a; } main() { int a; a = fi(6); return a; }"
+test_program 4 "int f(int x) { x * x; } int main() { f(2); }"
+test_program 60 "int f(int x) { int y; y = 3; int z; z = 4; return x * y * z; } int main() { int a; a = f(5); return a; }"
+test_program 120 "int f(int x, int y, int z) { return x * y * z; } int main() { int a; a = f(4, 5, 6); return a; }"
+test_program 8 "int fi(int x) { if (x == 1) return 1; if (x == 2) return 1; int a; a = fi(x-2) + fi(x-1); return a; } int main() { int a; a = fi(6); return a; }"
 
-test_program 6 "main() { int a; a = 6; int b; b = &a; return *b; }"
-test_program 18 "main() { int a; a = 6 * 3; int b; b = &a; return *b; }"
-test_program 6 "main() { int a; a = 6; int b; b = 7; int c; c = &b + 16; return *c; }"
+test_program 6 "int main() { int a; a = 6; int b; b = &a; return *b; }"
+test_program 18 "int main() { int a; a = 6 * 3; int b; b = &a; return *b; }"
+test_program 6 "int main() { int a; a = 6; int b; b = 7; int c; c = &b + 16; return *c; }"
 
-test_error "main() { int a; int b; b = a * (5 + 3; return b }" "ERROR: expected ')' for pair of '(', but got ; return b }"
-test_error "main() { int a; int b; b = a * 5 + 3); return b; }" "ERROR: expected ;, but got ); return b; }"
-test_error "main() { int a; a = 5; int b; b = 3; return a * b }" "ERROR: expected ;, but got }"
-test_error "main() { int a; int b; b = a * 3; return b; " "ERROR: expected }, but got "
-test_error "main() { 1 = 2 + 3; }" "ERROR: expected identifier, but got "
-test_error "main() { int a; a + 3 = 5; a }" "ERROR: expected ;, but got }"
-test_error "f(a, b) { return a * b  main() { a = f(4, 5); return a; }" "ERROR: expected ;, but got main"
-test_error "f(a, b) { return a * b;  main() { a = f(4, 5); return a; }" "ERROR: expected ;, but got "
-test_error "f(a, b) { return a * b } main() { a = f(4, 5); return a; }" "ERROR: expected ;, but got } main() { a = f(4, 5); return a; }"
-test_error "f(a, b, c, d, e, f, g) { return a * b * c * d * e * f * g; } main() { a = f(4, 5, 6, 7, 8, 9, 10); return a; }" "ERROR: expected Up to 6 parameters, but got g"
-test_error "main() { int a; *a = 6 * 3; int b; &b = a; return b; }" "ERROR: expected identifier, but got "
-test_error "main() { int a; *a = 6 * 3; int b; &b = a; return b; }" "ERROR: expected identifier, but got "
-test_error  "main() { a; a = 3; a; }" "ERROR: expected defined identifier, but got a"
-test_error  "main() { a; a = 3; a = a+3; }" "ERROR: expected defined identifier, but got a"
-test_error  "main() { int a = 3; a = a+3; }" "ERROR: expected ';' after int declaration and identifier, but got = 3; a = a+3; }"
+test_error "int main() { int a; int b; b = a * (5 + 3; return b }" "ERROR: expected ')' for pair of '(', but got ; return b }"
+test_error "int main() { int a; int b; b = a * 5 + 3); return b; }" "ERROR: expected ;, but got ); return b; }"
+test_error "int main() { int a; a = 5; int b; b = 3; return a * b }" "ERROR: expected ;, but got }"
+test_error "int main() { int a; int b; b = a * 3; return b; " "ERROR: expected }, but got "
+test_error "int main() { 1 = 2 + 3; }" "ERROR: expected identifier, but got "
+test_error "int main() { int a; a + 3 = 5; a }" "ERROR: expected ;, but got }"
+test_error "int f(int a, int b) { return a * b  int main() { int a; a = f(4, 5); return a; }" "ERROR: expected ;, but got int"
+test_error "int f(int a, int b) { return a * b;  int main() { int a; a = f(4, 5); return a; }" "ERROR: expected ';' after int declaration and identifier, but got () { int a; a = f(4, 5); return a; }"
+test_error "int f(int a, int b) { return a * b } int main() { int a; a = f(4, 5); return a; }" "ERROR: expected ;, but got } int main() { int a; a = f(4, 5); return a; }"
+test_error "int f(int a, int b, int c, int d, int e, int f, int g) { return a * b * c * d * e * f * g; } int main() { a = f(4, 5, 6, 7, 8, 9, 10); return a; }" "ERROR: expected Up to 6 parameters, but got g"
+test_error "int main() { int a; *a = 6 * 3; int b; &b = a; return b; }" "ERROR: expected identifier, but got "
+test_error "int main() { int a; *a = 6 * 3; int b; &b = a; return b; }" "ERROR: expected identifier, but got "
+test_error  "int main() { a; a = 3; a; }" "ERROR: expected defined identifier, but got a"
+test_error  "int main() { a; a = 3; a = a+3; }" "ERROR: expected defined identifier, but got a"
+test_error  "int main() { int a = 3; a = a+3; }" "ERROR: expected ';' after int declaration and identifier, but got = 3; a = a+3; }"
+test_error  "f() { 1; } main() { f(); }" "ERROR: expected int, but got f"
+test_error  "int f() { 1; } main() { f(); }" "ERROR: expected int, but got main"
+test_error  "int f(x) { x * x; } int main() { f(2); }" "ERROR: expected defined identifier, but got x"
 
 echo OK
