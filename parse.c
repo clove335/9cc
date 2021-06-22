@@ -29,9 +29,16 @@ Node *new_node_num(int val) {
   return node;
 }
 
+Type *new_type() {
+  Type *type = (Type *)malloc(sizeof(Type));
+  return type;
+}
+
 Node *assign() {
   Node *node = equality();
   if (consume("=")) {
+    if (node->ty != ND_IDENT)
+      error(pos - 2, "identifier");
     map_put(env, node->name, (void *)(long)env->keys->len);
     return new_node('=', node, assign());
   }
@@ -116,9 +123,7 @@ Node *stmt() {
     return node;
   }
 
-  if (tokens[pos].ty == ';' &&
-      tokens[pos + 1].ty == TK_EOF)
-  {
+  if (tokens[pos].ty == ';' && tokens[pos + 1].ty == TK_EOF) {
     error(++pos, "}");
   }
   if (!consume(";")) {
@@ -140,7 +145,7 @@ void program() {
     if (tokens[pos].ty == '}' || tokens[pos].ty == TK_EOF)
       break;
     node = function_definition();
-    vec_push(node->definitions, (void *) node);
+    vec_push(node->definitions, (void *)node);
     code[i] = node;
     i++;
   }
@@ -178,25 +183,30 @@ Node *function_definition() {
   }
 
   Symbol *func_pos = (Symbol *)new_symbol();
-  map_put(func_symbols, tokens[pos].name, &func_pos->position);
+  func_pos->value_type = new_type();
+  func_pos->value_type->type = INT;
+  map_put(func_symbols, tokens[pos].name, (void *)func_pos);
   pos++;
 
   map_clear(symbols);
   int params_count = 0;
   consume("(");
   while (!consume(")")) {
-    if (consume(",") || consume("int")) continue;
+    if (consume(",") || consume("int"))
+      continue;
     if (params_count >= 6) {
       error(pos, "Up to 6 parameters");
     }
-    if (tokens[pos].ty == TK_IDENT &&
-        tokens[pos - 1].ty != TK_INT_DECL) {
-      error(pos, "defined identifier");
+    if (tokens[pos].ty == TK_IDENT) {
+      if (tokens[pos - 1].ty != TK_INT_DECL && tokens[pos - 1].ty != '*')
+        error(pos, "defined identifier or dereference operator");
     }
 
     Symbol *param = new_symbol();
+    param->value_type = new_type();
+    param->value_type->type = INT;
     param->position = map_count(symbols) * 4 + 4;
-    map_put(symbols, tokens[pos++].name, &param->position);
+    map_put(symbols, tokens[pos++].name, (void *)param);
     params_count++;
   }
 
@@ -229,12 +239,13 @@ Node *term() {
       node = func_args();
       return node;
     }
-    if (!map_get(symbols, tokens[pos].name)) error(pos, "defined identifier");
+    if (!map_get(symbols, tokens[pos].name))
+      error(pos, "defined identifier");
     node = new_node_ident(tokens[pos].name);
     if (map_get(func_symbols, tokens[pos].name)) {
-      node->symbol = (Symbol *) map_get(func_symbols, tokens[pos].name);
+      node->symbol = (Symbol *)map_get(func_symbols, tokens[pos].name);
     } else if (map_get(symbols, tokens[pos].name)) {
-      node->symbol = (Symbol *) map_get(symbols, tokens[pos].name);
+      node->symbol = (Symbol *)map_get(symbols, tokens[pos].name);
     } else {
       node->symbol = NULL;
     }
@@ -247,19 +258,31 @@ Node *term() {
   }
 
   if (tokens[pos].ty == TK_INT_DECL) {
-    if (tokens[pos + 1].ty != TK_IDENT)
-      error(pos + 1, "identifier after int declaration");
-    if (tokens[pos + 2].ty != ';')
-      error(pos + 2, "';' after int declaration and identifier");
-    if (!map_get(symbols, tokens[pos + 1].name)) {
-      Symbol *symbol = new_symbol();
-      symbol->position = map_count(symbols) * 4 + 4;
-      map_put(symbols, tokens[pos + 1].name, &symbol->position);
+    pos++;
+    Type *type = new_type();
+    type->type = INT;
+    while (consume("*")) {
+      Type *ptr_type = new_type();
+      ptr_type->type = POINTER;
+      ptr_type->pointer_to = type;
+      type = ptr_type;
     }
-    pos += 2;
+
+    if (tokens[pos].ty != TK_IDENT)
+      error(pos, "identifier or dereference operator after int declaration");
+    if (tokens[pos + 1].ty != ';')
+      error(pos + 1, "';' after int declaration and identifier");
+
+    if (!map_get(symbols, tokens[pos].name)) {
+      Symbol *symbol = new_symbol();
+      symbol->value_type = type;
+      symbol->value_type->type = INT;
+      symbol->position = map_count(symbols) * 4 + 4;
+      map_put(symbols, tokens[pos].name, (void *)symbol);
+    }
+    pos++;
     return node;
   }
-
 }
 
 Node *mul() {

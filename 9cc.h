@@ -1,5 +1,5 @@
-#include <stdio.h>
 #include <stdbool.h>
+#include <stdio.h>
 #include <stdlib.h>
 
 /* トークンの型を表す値 */
@@ -20,7 +20,7 @@ enum {
 };
 
 enum {
-  ND_NUM = 256,   /* Type of int Node  */
+  ND_NUM = 256, /* Type of int Node  */
   ND_IDENT,
   ND_EQ,
   ND_NOT_EQ,
@@ -29,9 +29,9 @@ enum {
   ND_RETURN,
   ND_EXPR_STMT,
   ND_IF,
-  ND_WHILE,	// "while"
-  ND_FOR,	// "for"
-  ND_BLOCK,	// { ... }
+  ND_WHILE, // "while"
+  ND_FOR,   // "for"
+  ND_BLOCK, // { ... }
   ND_FUNC_CALL,
   ND_FUNC_DEF,
   ND_PROGRAM,
@@ -51,41 +51,49 @@ typedef struct {
   Vector *vals;
 } Map;
 
+typedef enum type_category { INT, POINTER } TypeCategory;
+
+typedef struct type {
+  TypeCategory type;
+  struct type *pointer_to;
+} Type;
+
 typedef struct symbol {
+  Type *value_type;
   int position;
 } Symbol;
 
 typedef struct Node {
-  int ty;             /* Operator or ND_NUM */
-  struct Node *lhs;   /* Left-hand side */
-  struct Node *rhs;   /* Right-hand side */
+  int ty;           /* Operator or ND_NUM */
+  struct Node *lhs; /* Left-hand side */
+  struct Node *rhs; /* Right-hand side */
 
-  struct Node *cond;  /* "if", "while" or "for" statement */
+  struct Node *cond; /* "if", "while" or "for" statement */
   struct Node *then;
   struct Node *els;
   struct Node *init;
   struct Node *after;
 
-  Vector *statements; /* Block */
-  Vector *definitions; /* Block */
-  char *funcname;     /* Function call */
-  struct Node *args[6];         /* arguments for Functions */
+  Vector *statements;   /* Block */
+  Vector *definitions;  /* Block */
+  char *funcname;       /* Function call */
+  struct Node *args[6]; /* arguments for Functions */
   int args_count;
   int vars_count;
   int params_count;
   Symbol *symbol;
 
-  int val;            /* Use only when ty is ND_NUM */
-  char *name;         /* Use only when ty is ND_IDENT */
+  int val;    /* Use only when ty is ND_NUM */
+  char *name; /* Use only when ty is ND_IDENT */
 } Node;
 
 typedef struct {
-  int ty;       //Type of Token
-  int val;      //tyがTKNUMの場合、その数値
-  char *name;   // if TK_IDENT -> name.
-  char *input;  //STRING of Token
+  int ty;      // Type of Token
+  int val;     // tyがTKNUMの場合、その数値
+  char *name;  // if TK_IDENT -> name.
+  char *input; // STRING of Token
   int len;
-} Token;  
+} Token;
 
 extern int pos;
 extern Token tokens[1024];
@@ -99,17 +107,18 @@ extern void vec_push(Vector *vec, void *elem);
 extern void test_vector();
 extern void test_map();
 extern Map *new_map();
-extern void map_put(Map *map, char *key, int *val);
-extern void *map_get(Map *map, char *key); 
+extern void map_put(Map *map, char *key, void *val);
+extern void *map_get(Map *map, char *key);
 extern void *map_search(Map *map, char *key);
 Symbol *new_symbol();
+Type *new_type();
 extern int map_count(Map *map);
 extern void map_clear(Map *map);
 
 void error(int i, char *s);
 void *tokenize(char *p);
-int expect(int line, int expected, int actual); 
-void runtest(); 
+int expect(int line, int expected, int actual);
+void runtest();
 Node *new_node(int ty, Node *lhs, Node *rhs);
 Node *new_node_num(int val);
 Node *new_node_ident(char *name);
@@ -127,4 +136,3 @@ void codegen();
 Node *equality();
 Node *expr();
 Node *function_definition();
-

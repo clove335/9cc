@@ -59,7 +59,7 @@ Map *new_map() {
   return map;
 }
 
-void map_put(Map *map, char *key, int *val) {
+void map_put(Map *map, char *key, void *val) {
   vec_push(map->keys, key);
   vec_push(map->vals, val);
   map->count++;

@@ -1,19 +1,22 @@
-#include <stdio.h>
-#include <stdbool.h>
-#include <string.h>
 #include "9cc.h"
+#include <stdbool.h>
+#include <stdio.h>
+#include <string.h>
 
-char args_reg[6][4] = { "rdi", "rsi", "rdx", "rcx", "r8", "r9" };
+char args_reg[6][4] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
 static int labelnum = 1;
 
 void gen_lval(Node *node) {
   if (node->ty != ND_IDENT)
     error(pos, "identifier");
 
-  int count = (long) node->symbol->position;
-  printf("  mov rax, rbp\n");
-  printf("  sub rax, %d\n", count * 4);
-  printf("  push rax\n");
+  int count = (long)node->symbol->position;
+  if (node->symbol->value_type->type == INT ||
+      node->symbol->value_type->type == POINTER) {
+    printf("  mov rax, rbp\n");
+    printf("  sub rax, %d\n", count * 4);
+    printf("  push rax\n");
+  }
 }
 
 void gen_func_def(Node *node) {
@@ -22,7 +25,7 @@ void gen_func_def(Node *node) {
   }
 
   printf("%s:\n", node->funcname);
-  printf("  push rbp\n");      /* prologue. 26 Sizes of variable. */
+  printf("  push rbp\n"); /* prologue. 26 Sizes of variable. */
   printf("  mov rbp, rsp\n");
   printf("  sub rsp, %d\n", 26 * 8);
 
@@ -32,14 +35,14 @@ void gen_func_def(Node *node) {
   }
 
   gen(node);
-  printf("  pop rax\n");  /* Load the value of all equatation to RAX */
+  printf("  pop rax\n"); /* Load the value of all equatation to RAX */
 
   if (strcmp(node->funcname, "main") == 0) {
-    printf(".L.return:\n");      /* and return it.                          */
+    printf(".L.return:\n"); /* and return it.                          */
   }
   printf("  mov rsp, rbp\n"); /* epilogue. */
   printf("  pop rbp\n");
-  printf("  ret\n");      /* and return it.                          */
+  printf("  ret\n"); /* and return it.                          */
 }
 
 void gen(Node *node) {
@@ -55,7 +58,8 @@ void gen(Node *node) {
   }
 
   if ((*node).ty == ND_IDENT) {
-    if (!(*node).symbol) error(pos, "defined identifier");
+    if (!(*node).symbol)
+      error(pos, "defined identifier");
     gen_lval(node);
     printf("  pop rax\n");
     printf("  mov rax, [rax]\n");
@@ -64,12 +68,23 @@ void gen(Node *node) {
   }
 
   if ((*node).ty == '=') {
+    Symbol *symbol = node->lhs->symbol;
     gen_lval(node->lhs);
-    gen(node->rhs); 
-    printf("  pop rdi\n");
-    printf("  pop rax\n");
-    printf("  mov [rax], rdi\n");
-    printf("  push rdi\n");
+
+    if (symbol->value_type->type == INT) {
+      gen(node->rhs);
+      printf("  pop rdi\n");
+      printf("  pop rax\n");
+      printf("  mov [rax], rdi\n");
+      printf("  push rdi\n");
+    } else if (symbol->value_type->type == POINTER) {
+      gen(node->rhs);
+      printf("  pop rdi\n");
+      printf("  pop rax\n");
+      printf("  mov rax, [rax]\n");
+      printf("  push rax\n");
+      return;
+    }
     return;
   }
 
@@ -95,7 +110,7 @@ void gen(Node *node) {
     }
     return;
   }
-  
+
   if ((*node).ty == ND_WHILE) {
     int num = labelnum++;
     printf(".L.begin.%d:\n", num);
@@ -111,7 +126,7 @@ void gen(Node *node) {
 
   if ((*node).ty == ND_FOR) {
     int num = labelnum++;
-    if (node->init) 
+    if (node->init)
       gen(node->init);
     printf(".L.begin.%d:\n", num);
     if (node->cond) {
@@ -130,7 +145,7 @@ void gen(Node *node) {
 
   if ((*node).ty == ND_BLOCK) {
     for (int i = 0; i < node->statements->len; i++) {
-      gen((Node *) node->statements->data[i]);
+      gen((Node *)node->statements->data[i]);
     }
     return;
   }
@@ -156,7 +171,7 @@ void gen(Node *node) {
     gen(node->lhs);
     printf("  pop rax\n");
     printf("  push rax\n");
-    printf("  jmp .L.return\n");      /* and return it.                          */
+    printf("  jmp .L.return\n"); /* and return it.                          */
     return;
   }
 
@@ -165,7 +180,7 @@ void gen(Node *node) {
     return;
   }
 
-  if ((*node).ty == ND_DEREF) {
+  if (node->ty == ND_DEREF) {
     gen(node->lhs);
     printf("  pop rdi\n");
     printf("  pop rax\n");
@@ -173,7 +188,7 @@ void gen(Node *node) {
     printf("  push rax\n");
     return;
   }
-  
+
   if (node->lhs != 0)
     gen(node->lhs);
   if (node->rhs != 0)
