@@ -222,6 +222,8 @@ test_program 6 "int main() { int a; a = 6; int b; b = 7; int c; c = &b + 16; ret
 test_program 70 "int main() { int *a; int b; b = 70; a = &b; return *a; }"
 test_program 7 "int main() { int *a; int b; b = 7; a = &b; int **c; c = &a; return **c; }"
 test_program 8 "int main() { int *a; int b; b = 8; a = &b; int **c; c = a; int ***d; d = &c; return ***d; }"
+test_program 10 "int main() { int i; i = 0; do { i = i + 1; } while (i < 10); return i; }"
+test_program 128 "int main() { int i; i = 1; int count; count = 0; do { i = i * 2; count = count + 1; } while (count < 7); return i; }"
 
 test_error "int main() { int a; int b; b = a * (5 + 3; return b }" "ERROR: expected ')' for pair of '(', but got ; return b }"
 test_error "int main() { int a; int b; b = a * 5 + 3); return b; }" "ERROR: expected ;, but got ); return b; }"
@@ -241,5 +243,6 @@ test_error  "int main() { int a = 3; a = a+3; }" "ERROR: expected ';' after int 
 test_error  "f() { 1; } main() { f(); }" "ERROR: expected int, but got f"
 test_error  "int f() { 1; } main() { f(); }" "ERROR: expected int, but got main"
 test_error  "int f(x) { x * x; } int main() { f(2); }" "ERROR: expected defined identifier or dereference operator, but got x"
+test_error "int main() { int i; i = 0; do { i = i + 1; } while (i < 10) return i; }" "ERROR: expected ';' after do-while statement, but got return"
 
 echo OK

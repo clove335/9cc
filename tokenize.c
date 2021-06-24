@@ -119,6 +119,15 @@ void *tokenize(char *p) {
       continue;
     }
       
+    if (strncmp(p, "do", 2) == 0) {
+      tokens[i].ty = TK_DO;
+      tokens[i].input = "do";
+      tokens[i].len = 2;
+      i++;
+      p += 2;
+      continue;
+    }
+
     if (*p == '+' || *p == '-' || *p == '*' || *p == '/' 
         || *p == '(' || *p == ')' || *p == '=' || *p == ';'
         || *p == '{' || *p == '}' || *p == ',' || *p == '&') {

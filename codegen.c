@@ -124,6 +124,19 @@ void gen(Node *node) {
     return;
   }
 
+  if ((*node).ty == ND_DO_WHILE) {
+    int num = labelnum++;
+    printf(".L.begin.%d:\n", num);
+    gen(node->then);
+    gen(node->cond);
+    printf("  pop rax\n");
+    printf("  cmp rax, 0\n");
+    printf("  je  .L.end.%d\n", num);
+    printf("  jmp  .L.begin.%d\n", num);
+    printf(".L.end.%d:\n", num);
+    return;
+  }
+
   if ((*node).ty == ND_FOR) {
     int num = labelnum++;
     if (node->init)

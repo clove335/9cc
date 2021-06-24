@@ -112,6 +112,24 @@ Node *stmt() {
     return node;
   }
 
+  if (consume("do")) {
+    node = malloc(sizeof(Node));
+    node->ty = ND_DO_WHILE;
+    expect(__LINE__, '{', tokens[pos].ty);
+    node->then = stmt();
+    if (!consume("while"))
+      error(pos, "'while' after do statement");
+    expect(__LINE__, '(', tokens[pos].ty);
+    node->cond = expr();
+    if (!consume(")")) {
+      error(pos, "')' for pair of '('");
+    }
+    if (!consume(";")) {
+      error(pos, "';' after do-while statement");
+    }
+    return node;
+  }
+
   if (consume("{")) {
     Node *node = malloc(sizeof(Node));
     node->ty = ND_BLOCK;

@@ -16,6 +16,7 @@ enum {
   TK_WHILE,
   TK_FOR,
   TK_INT_DECL,
+  TK_DO,
   TK_EOF
 };
 
@@ -36,7 +37,8 @@ enum {
   ND_FUNC_DEF,
   ND_PROGRAM,
   ND_ADDRESS,
-  ND_DEREF
+  ND_DEREF,
+  ND_DO_WHILE,
 };
 
 typedef struct {
