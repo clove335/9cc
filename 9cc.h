@@ -136,3 +136,4 @@ void codegen();
 Node *equality();
 Node *expr();
 Node *function_definition();
+void declaration_of_var();

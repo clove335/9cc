@@ -222,6 +222,31 @@ Node *function_definition() {
   return node;
 }
 
+void declaration_of_var() {
+  Type *type = new_type();
+  type->type = INT;
+  while (consume("*")) {
+    Type *ptr_type = new_type();
+    ptr_type->type = POINTER;
+    ptr_type->pointer_to = type;
+    type = ptr_type;
+  }
+
+  if (tokens[pos].ty != TK_IDENT)
+    error(pos, "identifier or dereference operator after int declaration");
+  if (tokens[pos + 1].ty != ';')
+    error(pos + 1, "';' after int declaration and identifier");
+
+  if (!map_get(symbols, tokens[pos].name)) {
+    Symbol *symbol = new_symbol();
+    symbol->value_type = type;
+    symbol->value_type->type = INT;
+    symbol->position = map_count(symbols) * 4 + 4;
+    map_put(symbols, tokens[pos].name, (void *)symbol);
+  }
+  pos++;
+}
+
 // term = "(" expr ")" | ident func-args? | num
 Node *term() {
   Node *node = malloc(sizeof(Node));
@@ -259,28 +284,7 @@ Node *term() {
 
   if (tokens[pos].ty == TK_INT_DECL) {
     pos++;
-    Type *type = new_type();
-    type->type = INT;
-    while (consume("*")) {
-      Type *ptr_type = new_type();
-      ptr_type->type = POINTER;
-      ptr_type->pointer_to = type;
-      type = ptr_type;
-    }
-
-    if (tokens[pos].ty != TK_IDENT)
-      error(pos, "identifier or dereference operator after int declaration");
-    if (tokens[pos + 1].ty != ';')
-      error(pos + 1, "';' after int declaration and identifier");
-
-    if (!map_get(symbols, tokens[pos].name)) {
-      Symbol *symbol = new_symbol();
-      symbol->value_type = type;
-      symbol->value_type->type = INT;
-      symbol->position = map_count(symbols) * 4 + 4;
-      map_put(symbols, tokens[pos].name, (void *)symbol);
-    }
-    pos++;
+    declaration_of_var();
     return node;
   }
 }
