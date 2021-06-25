@@ -128,6 +128,24 @@ void *tokenize(char *p) {
       continue;
     }
 
+    if (strncmp(p, "continue", 8) == 0) {
+      tokens[i].ty = TK_CONTINUE;
+      tokens[i].input = "continue";
+      tokens[i].len = 8;
+      i++;
+      p += 8;
+      continue;
+    }
+
+    if (strncmp(p, "break", 5) == 0) {
+      tokens[i].ty = TK_BREAK;
+      tokens[i].input = "break";
+      tokens[i].len = 5;
+      i++;
+      p += 5;
+      continue;
+    }
+
     if (*p == '+' || *p == '-' || *p == '*' || *p == '/' 
         || *p == '(' || *p == ')' || *p == '=' || *p == ';'
         || *p == '{' || *p == '}' || *p == ',' || *p == '&') {
@@ -202,8 +220,8 @@ int expect(int line, int expected, int actual) {
         tokens[pos].ty == ')') pos++;
     return 0;
   }
-  fprintf(stderr, "%d: %d expected, but got %d \n",
-      line, expected, actual);
+  fprintf(stderr, "%d: expected '%c' after %s, but got '%c' \n",
+      line, expected, tokens[pos  - 1].input, actual);
   exit(1);
 }
 

@@ -224,6 +224,15 @@ test_program 7 "int main() { int *a; int b; b = 7; a = &b; int **c; c = &a; retu
 test_program 8 "int main() { int *a; int b; b = 8; a = &b; int **c; c = a; int ***d; d = &c; return ***d; }"
 test_program 10 "int main() { int i; i = 0; do { i = i + 1; } while (i < 10); return i; }"
 test_program 128 "int main() { int i; i = 1; int count; count = 0; do { i = i * 2; count = count + 1; } while (count < 7); return i; }"
+test_program  5 "int main() { int x; x = 0; int i; for (i = 0; i < 10; i = i + 1) { x = x + 1; if (x == 5) { break; } } return x; }"
+test_program 64 "int main() { int i; i = 1; int count; count = 0; while (count < 7) { i = i * 2; if (i == 64) { break; } count = count + 1; } return i; }"
+test_program 64 "int main() { int i; i = 1; int count; count = 0; do { i = i * 2; if (i == 64) { break; } count = count + 1; } while (count < 7); return i; }"
+test_program 100 "int main() { int i; i = 0; do { i = i + 1; if (i < 100) continue; break; } while(1); i; }"
+test_program 100 "int main() { int i; i = 1; while (1) { i = i + 1; if (i < 100) continue; break; } return i; }"
+test_program 64 "int main() { int i; i = 1; int count; count = 0; while (count < 7) { count = count + 1; if (i == 64) continue; i = i * 2; } return i; }"
+test_program 64 "int main() { int i; i = 1; int count; count = 0; do { if (count == 5) { count = count + 1; continue; } i = i * 2; count = count + 1; } while (count < 7); return i; }"
+test_program  7 "int main() { int x; x = 0; int i; for (i = 0; i < 10; i = i + 1) { if (x == 7) { continue; } x = x + 1; } return x; }"
+test_program 20 "int main() { int i; i = 0; for (;; i = i + 1) { if (i < 20) continue; break; } return i; }"
 
 test_error "int main() { int a; int b; b = a * (5 + 3; return b }" "ERROR: expected ')' for pair of '(', but got ; return b }"
 test_error "int main() { int a; int b; b = a * 5 + 3); return b; }" "ERROR: expected ;, but got ); return b; }"
@@ -244,5 +253,7 @@ test_error  "f() { 1; } main() { f(); }" "ERROR: expected int, but got f"
 test_error  "int f() { 1; } main() { f(); }" "ERROR: expected int, but got main"
 test_error  "int f(x) { x * x; } int main() { f(2); }" "ERROR: expected defined identifier or dereference operator, but got x"
 test_error "int main() { int i; i = 0; do { i = i + 1; } while (i < 10) return i; }" "ERROR: expected ';' after do-while statement, but got return"
+test_error "int main() { int i; i = 1; int count; count = 0; do { i = i * 2; if (i == 64) { break } count = count + 1; } while (count < 7); return i; }" "143: expected ';' after break, but got '}' "
+test_error "int main() { int i; i = 1; int count; count = 0; do { i = i * 2; if (i == 64) { continue } count = count + 1; } while (count < 7); return i; }" "136: expected ';' after continue, but got '}' "
 
 echo OK

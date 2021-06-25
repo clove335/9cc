@@ -17,6 +17,8 @@ enum {
   TK_FOR,
   TK_INT_DECL,
   TK_DO,
+  TK_CONTINUE,
+  TK_BREAK,
   TK_EOF
 };
 
@@ -39,6 +41,8 @@ enum {
   ND_ADDRESS,
   ND_DEREF,
   ND_DO_WHILE,
+  ND_CONTINUE,
+  ND_BREAK
 };
 
 typedef struct {

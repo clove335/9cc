@@ -130,6 +130,20 @@ Node *stmt() {
     return node;
   }
 
+  if (consume("continue")) {
+    Node *node = malloc(sizeof(Node));
+    node->ty = ND_CONTINUE;
+    expect(__LINE__, ';', tokens[pos].ty);
+    return node;
+  }
+
+  if (consume("break")) {
+    Node *node = malloc(sizeof(Node));
+    node->ty = ND_BREAK;
+    expect(__LINE__, ';', tokens[pos].ty);
+    return node;
+  }
+
   if (consume("{")) {
     Node *node = malloc(sizeof(Node));
     node->ty = ND_BLOCK;

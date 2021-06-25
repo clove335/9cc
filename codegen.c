@@ -5,6 +5,8 @@
 
 char args_reg[6][4] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
 static int labelnum = 1;
+static int continue_labelnum = 1;
+static int break_labelnum = 1;
 
 void gen_lval(Node *node) {
   if (node->ty != ND_IDENT)
@@ -112,6 +114,8 @@ void gen(Node *node) {
   }
 
   if ((*node).ty == ND_WHILE) {
+    continue_labelnum = labelnum;
+    break_labelnum = labelnum;
     int num = labelnum++;
     printf(".L.begin.%d:\n", num);
     gen(node->cond);
@@ -125,6 +129,8 @@ void gen(Node *node) {
   }
 
   if ((*node).ty == ND_DO_WHILE) {
+    continue_labelnum = labelnum;
+    break_labelnum = labelnum;
     int num = labelnum++;
     printf(".L.begin.%d:\n", num);
     gen(node->then);
@@ -138,7 +144,9 @@ void gen(Node *node) {
   }
 
   if ((*node).ty == ND_FOR) {
+    break_labelnum = labelnum;
     int num = labelnum++;
+    continue_labelnum = labelnum;
     if (node->init)
       gen(node->init);
     printf(".L.begin.%d:\n", num);
@@ -149,10 +157,21 @@ void gen(Node *node) {
       printf("  je  .L.end.%d\n", num);
     }
     gen(node->then);
+    printf(".L.begin.%d:\n", continue_labelnum);
     if (node->after)
       gen(node->after);
     printf("  jmp .L.begin.%d\n", num);
     printf(".L.end.%d:\n", num);
+    return;
+  }
+
+  if (node->ty == ND_CONTINUE) {
+    printf("  jmp .L.begin.%d\n", continue_labelnum);
+    return;
+  }
+
+  if (node->ty == ND_BREAK) {
+    printf("  jmp .L.end.%d\n", break_labelnum);
     return;
   }
 
