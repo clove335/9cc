@@ -1,13 +1,12 @@
-#include <stdio.h>
-#include <ctype.h>
-#include <string.h>
-#include <stdlib.h>
-#include <stdbool.h>
 #include "9cc.h"
+#include <ctype.h>
+#include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 void error(int i, char *s) {
-  fprintf(stderr, "ERROR: expected %s, but got %s\n",
-      s, tokens[i].input);
+  fprintf(stderr, "ERROR: expected %s, but got %s\n", s, tokens[i].input);
   exit(1);
 }
 
@@ -28,7 +27,7 @@ void *tokenize(char *p) {
       p++;
       continue;
     }
-    
+
     if (strncmp(p, "==", 2) == 0) {
       tokens[i].ty = TK_EQ;
       tokens[i].input = "==";
@@ -36,8 +35,8 @@ void *tokenize(char *p) {
       i++;
       p += 2;
       continue;
-    }  
-    
+    }
+
     if (strncmp(p, "!=", 2) == 0) {
       tokens[i].ty = TK_NOT_EQ;
       tokens[i].input = p;
@@ -46,7 +45,7 @@ void *tokenize(char *p) {
       p += 2;
       continue;
     }
-    
+
     if (strncmp(p, ">=", 2) == 0) {
       tokens[i].ty = TK_L_EQ;
       tokens[i].input = p;
@@ -56,7 +55,7 @@ void *tokenize(char *p) {
       continue;
     }
 
-    if ((strncmp(p, "<=", 2) == 0) ){
+    if ((strncmp(p, "<=", 2) == 0)) {
       tokens[i].ty = TK_L_EQ;
       tokens[i].input = p;
       tokens[i].len = 2;
@@ -65,7 +64,7 @@ void *tokenize(char *p) {
       continue;
     }
 
-    if ((strncmp(p, "<", 1) == 0) ){
+    if ((strncmp(p, "<", 1) == 0)) {
       tokens[i].ty = TK_L_TH;
       tokens[i].input = p;
       tokens[i].len = 1;
@@ -74,7 +73,7 @@ void *tokenize(char *p) {
       continue;
     }
 
-    if ((strncmp(p, ">", 1) == 0) ){
+    if ((strncmp(p, ">", 1) == 0)) {
       tokens[i].ty = TK_L_TH;
       tokens[i].input = p;
       tokens[i].len = 1;
@@ -91,7 +90,7 @@ void *tokenize(char *p) {
       p += 2;
       continue;
     }
-      
+
     if (strncmp(p, "else", 4) == 0) {
       tokens[i].ty = TK_ELSE;
       tokens[i].input = "else";
@@ -100,7 +99,7 @@ void *tokenize(char *p) {
       p += 4;
       continue;
     }
-      
+
     if (strncmp(p, "while", 5) == 0) {
       tokens[i].ty = TK_WHILE;
       tokens[i].input = "while";
@@ -109,7 +108,7 @@ void *tokenize(char *p) {
       p += 5;
       continue;
     }
-      
+
     if (strncmp(p, "for", 3) == 0) {
       tokens[i].ty = TK_FOR;
       tokens[i].input = "for";
@@ -118,7 +117,7 @@ void *tokenize(char *p) {
       p += 3;
       continue;
     }
-      
+
     if (strncmp(p, "do", 2) == 0) {
       tokens[i].ty = TK_DO;
       tokens[i].input = "do";
@@ -146,9 +145,9 @@ void *tokenize(char *p) {
       continue;
     }
 
-    if (*p == '+' || *p == '-' || *p == '*' || *p == '/' 
-        || *p == '(' || *p == ')' || *p == '=' || *p == ';'
-        || *p == '{' || *p == '}' || *p == ',' || *p == '&') {
+    if (*p == '+' || *p == '-' || *p == '*' || *p == '/' || *p == '(' ||
+        *p == ')' || *p == '=' || *p == ';' || *p == '{' || *p == '}' ||
+        *p == ',' || *p == '&') {
       tokens[i].ty = *p;
       tokens[i].input = p;
       tokens[i].len = 1;
@@ -167,27 +166,27 @@ void *tokenize(char *p) {
     }
 
     if (strncmp(p, "int", 3) == 0) {
-       tokens[i].ty = TK_INT_DECL;
-       tokens[i].len = 3;
-       tokens[i].input = "int";
-       i++;
-       p += 3;
-       continue;
-     }
+      tokens[i].ty = TK_INT_DECL;
+      tokens[i].len = 3;
+      tokens[i].input = "int";
+      i++;
+      p += 3;
+      continue;
+    }
 
     if (('a' <= *p && *p <= 'z') || *p == '_') {
       char save[256];
       int count = 0;
 
       tokens[i].ty = TK_IDENT;
-      
+
       do {
         save[count++] = *p;
         p++;
       } while (isalnum(*p) || *p == '_');
       save[count] = '\0';
 
-      char *copy = malloc(sizeof(char)*count);
+      char *copy = malloc(sizeof(char) * count);
       strcpy(copy, save);
       tokens[i].name = copy;
       tokens[i].input = copy;
@@ -204,24 +203,22 @@ void *tokenize(char *p) {
       i++;
       continue;
     }
-    
+
     fprintf(stderr, "tokenize: error unexpected input. \n");
     exit(1);
   }
-  
+
   tokens[i].ty = TK_EOF;
   tokens[i].input = p;
 }
 
 int expect(int line, int expected, int actual) {
   if (expected == actual) {
-    if (tokens[pos].ty == '(' ||
-        tokens[pos].ty == ';' ||
-        tokens[pos].ty == ')') pos++;
+    if (tokens[pos].ty == '(' || tokens[pos].ty == ';' || tokens[pos].ty == ')')
+      pos++;
     return 0;
   }
-  fprintf(stderr, "%d: expected '%c' after %s, but got '%c' \n",
-      line, expected, tokens[pos  - 1].input, actual);
+  fprintf(stderr, "%d: expected '%c' after %s, but got '%c' \n", line, expected,
+          tokens[pos - 1].input, actual);
   exit(1);
 }
-

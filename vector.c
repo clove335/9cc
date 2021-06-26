@@ -1,5 +1,5 @@
-#include <string.h>
 #include "vector.h"
+#include <string.h>
 
 void runtest() {
   test_vector();
@@ -28,7 +28,7 @@ void test_map() {
 
   map_put(map, "foo", (void *)2);
   expect(__LINE__, 2, (long)map_get(map, "foo"));
-  
+
   map_put(map, "bar", (void *)4);
   expect(__LINE__, 4, (long)map_get(map, "bar"));
 
@@ -77,20 +77,12 @@ void *map_get(Map *map, char *key) {
   return NULL;
 }
 
-int map_count(Map *map)
-{
-  return map->count;
-}
+int map_count(Map *map) { return map->count; }
 
-void map_clear(Map *map)
-{
-  map->count = 0;
-}
+void map_clear(Map *map) { map->count = 0; }
 
-Symbol *new_symbol()
-{
-  Symbol *symbol = (Symbol *) malloc(sizeof(Symbol));
+Symbol *new_symbol() {
+  Symbol *symbol = (Symbol *)malloc(sizeof(Symbol));
 
   return symbol;
 }
-
