@@ -51,20 +51,20 @@ test_program() {
 }
 
 test_function_call() {
-  exp=$1
+  function=$1
   stub=$2
   output=$3
   
-  ./9cc "int main() { $exp }" > out.s
+  ./9cc "int main() { $function }" > out.s
   if [ $? -ne 0 ]; then
-    echo failed to generate assembly from "$exp"
+    echo failed to generate assembly from "$function"
     rm out.s
     exit 1
   fi
 
   gcc -c out.s -o out.o
   if [ $? -ne 0 ]; then
-    echo failed to generate .o file from "$exp"
+    echo failed to generate .o file from "$function"
     cat out.s
     rm out.s
     exit 1
@@ -80,6 +80,7 @@ test_function_call() {
   gcc out.o stub.o -o out
   if [ $? -ne 0 ]; then
     echo failed to link test stub and obj file generated from "$stub"
+    cat out.s > error.s
     cat out.s
     rm out.s out.o stub.o
     exit 1
@@ -97,11 +98,11 @@ test_function_call() {
   echo "$output" | diff - stdout.txt > /dev/null 
   if [ $? -ne 0 ]; then
     echo expect stdout to be \""$output"\", but got \""$(cat stdout.txt)"\".
-    cat out.s
+    cat out.s > error.s
     rm out.s out.o stub.o out stdout.txt
     exit 1
   else
-    echo "$exp => $output"
+    echo "$function => $output"
   fi
 
   rm out.s out.o stub.o out stdout.txt
@@ -215,13 +216,13 @@ test_program 60 "int f(int x) { int y; y = 3; int z; z = 4; return x * y * z; } 
 test_program 120 "int f(int x, int y, int z) { return x * y * z; } int main() { int a; a = f(4, 5, 6); return a; }"
 test_program 8 "int fi(int x) { if (x == 1) return 1; if (x == 2) return 1; int a; a = fi(x-2) + fi(x-1); return a; } int main() { int a; a = fi(6); return a; }"
 
-test_program 6 "int main() { int a; a = 6; int b; b = &a; return *b; }"
-test_program 18 "int main() { int a; a = 6 * 3; int b; b = &a; return *b; }"
-test_program 6 "int main() { int a; a = 6; int b; b = 7; int c; c = &b + 16; return *c; }"
+test_program 6 "int main() { int a; a = 6; int *b; b = &a; return *b; }"
+test_program 18 "int main() { int a; a = 6 * 3; int *b; b = &a; return *b; }"
+test_program 6 "int main() { int a; a = 6; int b; b = 7; int *c; c = &b + 8; return *c; }"
 
 test_program 70 "int main() { int *a; int b; b = 70; a = &b; return *a; }"
-test_program 7 "int main() { int *a; int b; b = 7; a = &b; int **c; c = &a; return **c; }"
-test_program 8 "int main() { int *a; int b; b = 8; a = &b; int **c; c = a; int ***d; d = &c; return ***d; }"
+ test_program 7 "int main() { int *a; int b; b = 7; a = &b; int **c; c = &a; return **c; }"
+test_program 8 "int main() { int *a; int b; b = 8; a = &b; int **c; c = &a; int ***d; d = &c; return ***d; }"
 test_program 10 "int main() { int i; i = 0; do { i = i + 1; } while (i < 10); return i; }"
 test_program 128 "int main() { int i; i = 1; int count; count = 0; do { i = i * 2; count = count + 1; } while (count < 7); return i; }"
 test_program  5 "int main() { int x; x = 0; int i; for (i = 0; i < 10; i = i + 1) { x = x + 1; if (x == 5) { break; } } return x; }"
@@ -233,6 +234,15 @@ test_program 64 "int main() { int i; i = 1; int count; count = 0; while (count <
 test_program 64 "int main() { int i; i = 1; int count; count = 0; do { if (count == 5) { count = count + 1; continue; } i = i * 2; count = count + 1; } while (count < 7); return i; }"
 test_program  7 "int main() { int x; x = 0; int i; for (i = 0; i < 10; i = i + 1) { if (x == 7) { continue; } x = x + 1; } return x; }"
 test_program 20 "int main() { int i; i = 0; for (;; i = i + 1) { if (i < 20) continue; break; } return i; }"
+
+test_function_call "int *a; alloc(&a, 22, 5, 63); int *b; b = a; print_num(*b);" "func.c" "22 -> a test for pointer addition and subtraction: OK."
+test_function_call "int *a; alloc(&a, 22, 5, 63); int *b; b = a; print_num(*(b + 1));" "func.c" "5 -> a test for pointer addition and subtraction: OK."
+test_function_call "int *a; alloc(&a, 22, 9, 63); int *b; b = a + 1; print_num(*b);" "func.c" "9 -> a test for pointer addition and subtraction: OK."
+test_function_call "int *a; alloc(&a, 22, 5, 63); int *b; b = a + 2; print_num(*b);" "func.c" "63 -> a test for pointer addition and subtraction: OK."
+test_function_call "int *a; alloc(&a, 22, 5, 63); int *b; b = a; print_num(*(b + 2));" "func.c" "63 -> a test for pointer addition and subtraction: OK."
+test_function_call "int *a; alloc(&a, 22, 5, 63); int *b; b = a + 2; print_num(*(b - 2));" "func.c" "22 -> a test for pointer addition and subtraction: OK."
+test_function_call "int *a; alloc(&a, 22, 5, 63); int *b; b = a + 2; print_num(*(b - 1));" "func.c" "5 -> a test for pointer addition and subtraction: OK."
+# test_program 5 "int main() { int *x; *x=3; int *y; *y=5; return *(x+1); }" #TODO: Not passed.
 
 test_error "int main() { int a; int b; b = a * (5 + 3; return b }" "ERROR: expected ')' for pair of '(', but got ; return b }"
 test_error "int main() { int a; int b; b = a * 5 + 3); return b; }" "ERROR: expected ;, but got ); return b; }"
@@ -253,7 +263,7 @@ test_error  "f() { 1; } main() { f(); }" "ERROR: expected int, but got f"
 test_error  "int f() { 1; } main() { f(); }" "ERROR: expected int, but got main"
 test_error  "int f(x) { x * x; } int main() { f(2); }" "ERROR: expected defined identifier or dereference operator, but got x"
 test_error "int main() { int i; i = 0; do { i = i + 1; } while (i < 10) return i; }" "ERROR: expected ';' after do-while statement, but got return"
-test_error "int main() { int i; i = 1; int count; count = 0; do { i = i * 2; if (i == 64) { break } count = count + 1; } while (count < 7); return i; }" "143: expected ';' after break, but got '}' "
-test_error "int main() { int i; i = 1; int count; count = 0; do { i = i * 2; if (i == 64) { continue } count = count + 1; } while (count < 7); return i; }" "136: expected ';' after continue, but got '}' "
+test_error "int main() { int i; i = 1; int count; count = 0; do { i = i * 2; if (i == 64) { break } count = count + 1; } while (count < 7); return i; }" "151: expected ';' after break, but got '}' "
+test_error "int main() { int i; i = 1; int count; count = 0; do { i = i * 2; if (i == 64) { continue } count = count + 1; } while (count < 7); return i; }" "144: expected ';' after continue, but got '}' "
 
 echo OK

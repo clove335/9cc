@@ -12,12 +12,18 @@ Node *new_node(int ty, Node *lhs, Node *rhs) {
   node->ty = ty;
   node->lhs = lhs;
   node->rhs = rhs;
+  if (!node->symbol)
+    node->symbol = new_symbol();
+  if (!node->symbol->value_type)
+    node->symbol->value_type = new_type();
   return node;
 }
 
 Node *new_node_ident(char *name) {
   Node *node = malloc(sizeof(Node));
   node->ty = ND_IDENT;
+  node->symbol = new_symbol();
+  node->symbol->value_type = new_type();
   node->name = name;
   return node;
 }
@@ -25,6 +31,8 @@ Node *new_node_ident(char *name) {
 Node *new_node_num(int val) {
   Node *node = malloc(sizeof(Node));
   node->ty = ND_NUM;
+  node->symbol = new_symbol();
+  node->symbol->value_type = new_type();
   node->val = val;
   return node;
 }
@@ -189,6 +197,8 @@ static Node *func_args(void) {
   Node *node = malloc(sizeof(Node));
   node->ty = ND_FUNC_CALL;
   node->funcname = strndup(tokens[pos - 1].name, tokens[pos - 1].len);
+  node->symbol = new_symbol();
+  node->symbol->value_type = new_type();
   node->args_count = 0;
   if (consume("("))
     if (consume(")"))
@@ -237,7 +247,7 @@ Node *function_definition() {
     Symbol *param = new_symbol();
     param->value_type = new_type();
     param->value_type->type = INT;
-    param->position = map_count(symbols) * 4 + 4;
+    param->position = map_count(symbols) * 8 + 8;
     map_put(symbols, tokens[pos++].name, (void *)param);
     params_count++;
   }
@@ -272,8 +282,7 @@ void declaration_of_var() {
   if (!map_get(symbols, tokens[pos].name)) {
     Symbol *symbol = new_symbol();
     symbol->value_type = type;
-    symbol->value_type->type = INT;
-    symbol->position = map_count(symbols) * 4 + 4;
+    symbol->position = map_count(symbols) * 8 + 8;
     map_put(symbols, tokens[pos].name, (void *)symbol);
   }
   pos++;
@@ -341,6 +350,10 @@ Node *add() {
   for (;;) {
     if (consume("+")) {
       node = new_node('+', node, mul());
+      if (node->lhs->symbol->value_type->type == POINTER &&
+          node->rhs->symbol->value_type->type == INT) {
+        node->symbol->value_type = node->lhs->symbol->value_type;
+      }
     } else if (consume("-")) {
       node = new_node('-', node, mul());
     } else {
@@ -358,12 +371,16 @@ Node *unary() {
   }
   if (consume("&")) {
     Node *node = malloc(sizeof(Node));
+    node->symbol = new_symbol();
+    node->symbol->value_type = new_type();
     node->ty = ND_ADDRESS;
     node->lhs = unary();
     return node;
   }
   if (consume("*")) {
     Node *node = malloc(sizeof(Node));
+    node->symbol = new_symbol();
+    node->symbol->value_type = new_type();
     node->ty = ND_DEREF;
     node->lhs = unary();
     return node;

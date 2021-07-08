@@ -13,12 +13,17 @@ void gen_lval(Node *node) {
     error(pos, "identifier");
 
   int count = (long)node->symbol->position;
-  if (node->symbol->value_type->type == INT ||
-      node->symbol->value_type->type == POINTER) {
+  if (node->symbol->value_type->type == INT) {
     printf("  mov rax, rbp\n");
-    printf("  sub rax, %d\n", count * 4);
+    printf("  sub rax, %d\n", count);
     printf("  push rax\n");
   }
+  else if (node->symbol->value_type->type == POINTER) {
+    printf("  mov rax, rbp\n");
+    printf("  sub rax, %d\n", count);
+    printf("  push rax\n");
+  }
+
 }
 
 void gen_func_def(Node *node) {
@@ -33,7 +38,7 @@ void gen_func_def(Node *node) {
 
   for (int i = 0; i < node->params_count; i++) {
     printf("  mov rax, %s\n", args_reg[i]);
-    printf("  mov [rbp-%d], rax\n", i * 16 + 16);
+    printf("  mov QWORD PTR -%d[rbp], rax\n", i * 8 + 8);
   }
 
   gen(node);
@@ -64,7 +69,7 @@ void gen(Node *node) {
       error(pos, "defined identifier");
     gen_lval(node);
     printf("  pop rax\n");
-    printf("  mov rax, [rax]\n");
+    printf("  mov rax, QWORD PTR [rax]\n");
     printf("  push rax\n");
     return;
   }
@@ -77,16 +82,16 @@ void gen(Node *node) {
       gen(node->rhs);
       printf("  pop rdi\n");
       printf("  pop rax\n");
-      printf("  mov [rax], rdi\n");
+      printf("  mov QWORD PTR [rax], rdi\n");
       printf("  push rdi\n");
     } else if (symbol->value_type->type == POINTER) {
       gen(node->rhs);
       printf("  pop rdi\n");
       printf("  pop rax\n");
-      printf("  mov rax, [rax]\n");
-      printf("  push rax\n");
-      return;
+      printf("  mov QWORD PTR [rax], rdi\n");
+      printf("  push rdi\n");
     }
+
     return;
   }
 
@@ -214,9 +219,8 @@ void gen(Node *node) {
 
   if (node->ty == ND_DEREF) {
     gen(node->lhs);
-    printf("  pop rdi\n");
     printf("  pop rax\n");
-    printf("  mov rax, [rax]\n");
+    printf("  mov rax, QWORD PTR [rax]\n");
     printf("  push rax\n");
     return;
   }
@@ -226,32 +230,75 @@ void gen(Node *node) {
   if (node->rhs != 0)
     gen(node->rhs);
 
-  switch ((*node).ty) {
-  case '+':
-    printf("  pop rdi\n");
-    printf("  pop rax\n");
-    printf("  add rax, rdi\n");
-    printf("  push rax\n");
-    break;
-  case '-':
-    printf("  pop rdi\n");
-    printf("  pop rax\n");
-    printf("  sub rax, rdi\n");
-    printf("  push rax\n");
-    break;
-  case '*':
+  if (node->ty == '+') {
+    Node *left = node->lhs;
+    Node *right = node->rhs;
+    Type *left_type = left->symbol->value_type;
+    Type *right_type = right->symbol->value_type;
+    if (left_type->type == INT && right_type->type == INT) {
+      printf("  pop rdi\n");
+      printf("  pop rax\n");
+      printf("  add rax, rdi\n");
+      printf("  push rax\n");
+    }
+
+    if (left_type->type == POINTER && right_type->type == INT) {
+      int size = 0;
+      if (left_type->pointer_to->type == INT) size = 4;
+      else if (left_type->pointer_to->type == POINTER) size = 8;
+      else error(pos, "the size of type (INT == 4 or POINTER == 8)");
+
+      printf("  pop rax\n");
+      printf("  mov rdx, %d\n", size);
+      printf("  mul rdx\n");
+      printf("  pop rcx\n");
+      printf("  add rcx, rax\n");
+      printf("  push rcx\n");
+    }
+  }
+
+  if (node->ty == '-') {
+    Node *left = node->lhs;
+    Node *right = node->rhs;
+    Type *left_type = left->symbol->value_type;
+    Type *right_type = right->symbol->value_type;
+    if (left_type->type == INT && right_type->type == INT) {
+      printf("  pop rdi\n");
+      printf("  pop rax\n");
+      printf("  sub rax, rdi\n");
+      printf("  push rax\n");
+    }
+    else if (left_type->type == POINTER && right_type->type == INT) {
+      int size = 0;
+      if (left_type->pointer_to->type == INT) size = 4;
+      else if (left_type->pointer_to->type == POINTER) size = 8;
+      else error(pos, "the size of type (INT == 4 or POINTER == 8)");
+
+      printf("  pop rax\n");
+      printf("  mov rdx, %d\n", size);
+      printf("  mul rdx\n");
+      printf("  pop rcx\n");
+      printf("  sub rcx, rax\n");
+      printf("  push rcx\n");
+    }
+  }
+
+  if (node->ty == '*') {
     printf("  pop rdi\n");
     printf("  pop rax\n");
     printf("  mul rdi\n");
     printf("  push rax\n");
-    break;
-  case '/':
+  }
+
+  if (node->ty == '/') {
     printf("  pop rdi\n");
     printf("  pop rax\n");
     printf("  mov rdx, 0\n");
     printf("  div rdi\n");
     printf("  push rax\n");
-    break;
+  }
+
+  switch ((*node).ty) {
   case ND_EQ:
     printf("  pop rdi\n");
     printf("  pop rax\n");
