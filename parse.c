@@ -45,7 +45,7 @@ Type *new_type() {
 Node *assign() {
   Node *node = equality();
   if (consume("=")) {
-    if (node->ty != ND_IDENT)
+    if (node->ty != ND_IDENT && node->ty != ND_DEREF)
       error(pos - 2, "identifier");
     map_put(env, node->name, (void *)(long)env->keys->len);
     return new_node('=', node, assign());
@@ -369,6 +369,15 @@ Node *unary() {
   if (consume("-")) {
     return new_node('-', new_node_num(0), term());
   }
+  if (consume("sizeof")) {
+    Node *node = malloc(sizeof(Node));
+    node->symbol = new_symbol();
+    node->symbol->value_type = new_type();
+    node->symbol->value_type->type = INT;
+    node->ty = ND_SIZEOF;
+    node->lhs = unary();
+    return node;
+  }
   if (consume("&")) {
     Node *node = malloc(sizeof(Node));
     node->symbol = new_symbol();
@@ -385,6 +394,7 @@ Node *unary() {
     node->lhs = unary();
     return node;
   }
+
   return term();
 }
 

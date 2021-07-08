@@ -9,7 +9,7 @@ static int continue_labelnum = 1;
 static int break_labelnum = 1;
 
 void gen_lval(Node *node) {
-  if (node->ty != ND_IDENT)
+  if (node->ty != ND_IDENT && node->ty != ND_DEREF)
     error(pos, "identifier");
 
   int count = (long)node->symbol->position;
@@ -222,6 +222,15 @@ void gen(Node *node) {
     printf("  pop rax\n");
     printf("  mov rax, QWORD PTR [rax]\n");
     printf("  push rax\n");
+    return;
+  }
+
+  if (node->ty == ND_SIZEOF) {
+    Type *left_type = node->lhs->symbol->value_type;
+    int size = 0;
+    if (left_type->type == INT) size = 4;
+    else if (left_type->type == POINTER) size = 8;
+    printf("  push %d\n", size);
     return;
   }
 

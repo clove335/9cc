@@ -19,6 +19,7 @@ enum {
   TK_DO,
   TK_CONTINUE,
   TK_BREAK,
+  TK_SIZEOF,
   TK_EOF
 };
 
@@ -42,7 +43,8 @@ enum {
   ND_DEREF,
   ND_DO_WHILE,
   ND_CONTINUE,
-  ND_BREAK
+  ND_BREAK,
+  ND_SIZEOF
 };
 
 typedef struct {

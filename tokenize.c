@@ -174,6 +174,15 @@ void *tokenize(char *p) {
       continue;
     }
 
+    if (strncmp(p, "sizeof", 6) == 0) {
+      tokens[i].ty = TK_SIZEOF;
+      tokens[i].len = 6;
+      tokens[i].input = "sizeof";
+      i++;
+      p += 6;
+      continue;
+    }
+
     if (('a' <= *p && *p <= 'z') || *p == '_') {
       char save[256];
       int count = 0;
